@@ -3,19 +3,6 @@
 FROM maven:3.9.8-eclipse-temurin-17 AS builder
 WORKDIR /build
 
-# Copy POM files first for dependency caching
-COPY pom.xml .
-COPY shared/pom.xml shared/
-COPY api-gateway/pom.xml api-gateway/
-COPY solver-worker/pom.xml solver-worker/
-COPY scraper-service/pom.xml scraper-service/
-
-# Copy shared source files and build it so it's installed in the container's local Maven repository
-COPY shared/src shared/src
-RUN mvn clean install -pl shared -DskipTests
-
-RUN mvn dependency:go-offline -B
-
 # Copy full source and build the package
 COPY . .
 RUN mvn package -DskipTests

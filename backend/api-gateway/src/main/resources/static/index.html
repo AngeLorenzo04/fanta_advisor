@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fanta-Advisor 26/27 - Asta Live Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #0a0b10;
+            --bg-secondary: #121420;
+            --bg-card: rgba(22, 25, 41, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.16);
+            
+            --color-p: #10b981; /* Goalkeeper - Green */
+            --color-d: #3b82f6; /* Defender - Blue */
+            --color-c: #eab308; /* Midfielder - Yellow */
+            --color-a: #ef4444; /* Attacker - Red */
+            
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --accent-solid: #3b82f6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-error: #ef4444;
+            
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+        }
+
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Navbar Styling */
+        header {
+            background: rgba(18, 20, 32, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0.8rem 2rem;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            color: white;
+            font-weight: 800;
+            font-size: 1.25rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .brand-name {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #f3f4f6, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: var(--accent-warning);
+            box-shadow: 0 0 8px var(--accent-warning);
+        }
+
+        .status-dot.online {
+            background-color: var(--accent-success);
+            box-shadow: 0 0 8px var(--accent-success);
+        }
+
+        .status-dot.offline {
+            background-color: var(--accent-error);
+            box-shadow: 0 0 8px var(--accent-error);
+        }
+
+        /* Main Workspace */
+        main {
+            max-width: 1400px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 1.5rem;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 1100px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Common Panel Styling */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Left Panel - Player List */
+        .player-filters {
+            display: flex;
+            gap: 0.35rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.35rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-solid);
+        }
+
+        .player-search {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-solid);
+        }
+
+        .player-scroll {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .player-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .player-item.selected {
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 3px solid var(--accent-solid);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .role-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .role-P { background-color: var(--color-p); }
+        .role-D { background-color: var(--color-d); }
+        .role-C { background-color: var(--color-c); }
+        .role-A { background-color: var(--color-a); }
+
+        .player-name-team {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .player-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .player-team {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .player-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.2rem;
+        }
+
+        .player-ev {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-solid);
+        }
+
+        .badges-row {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .small-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.25rem;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-oop {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-sp {
+            background-color: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
+
+        /* Center Panel - Auction workspace */
+        .center-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Active Bid Card */
+        .bid-card {
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1) 0%, transparent 60%), var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .bid-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            gap: 1rem;
+        }
+
+        .bid-placeholder svg {
+            width: 48px;
+            height: 48px;
+            color: var(--text-muted);
+        }
+
+        .active-player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .active-player-details {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .active-player-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+
+        .active-player-text h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .active-player-text p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .metric-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-value.highlight-blue {
+            color: var(--accent-solid);
+        }
+
+        /* Draft Controls Form */
+        .bid-form {
+            display: grid;
+            grid-template-columns: 1fr 120px;
+            gap: 1rem;
+            align-items: flex-end;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        select, input[type="number"] {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            outline: none;
+            width: 100%;
+        }
+
+        select:focus, input[type="number"]:focus {
+            border-color: var(--accent-solid);
+        }
+
+        .btn-purchase {
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            border: none;
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+            grid-column: span 2;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-purchase:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-purchase:active {
+            transform: translateY(0);
+        }
+
+        /* Log / Recent activity Panel */
+        .recent-purchases-card {
+            flex-grow: 1;
+        }
+
+        .purchase-history-list {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+            max-height: 250px;
+        }
+
+        .purchase-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+        }
+
+        .purchase-user {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .purchase-price {
+            font-weight: 700;
+            color: var(--accent-success);
+            font-size: 0.95rem;
+        }
+
+        /* Right Panel - Managers */
+        .managers-scroll {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .manager-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .manager-card:hover {
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .manager-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .manager-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .manager-budget {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .budget-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-success);
+        }
+
+        .max-bid {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .manager-slots {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+            background: rgba(0,0,0,0.15);
+            padding: 0.4rem;
+            border-radius: 8px;
+            justify-content: space-around;
+        }
+
+        .slot-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.65rem;
+        }
+
+        .slot-role {
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .slot-count {
+            font-weight: 800;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        /* Alert and logs Overlay styles */
+        .alert-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .toast-alert {
+            background: rgba(18, 20, 32, 0.95);
+            border-left: 4px solid var(--accent-solid);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        .toast-alert.success { border-left-color: var(--accent-success); }
+        .toast-alert.error { border-left-color: var(--accent-error); }
+        .toast-alert.warning { border-left-color: var(--accent-warning); }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Mode notification Banner */
+        .simulation-banner {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fef08a;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: none;
+        }
+
+        .simulation-banner.active {
+            display: block;
+        }
+
+        /* SVG helper icons */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+
+        /* Extra style for nice scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simulation Banner -->
+    <div id="simulation-banner" class="simulation-banner">
+        ⚠️ <strong>Modalità Simulazione Offline</strong>: Il server API non è raggiungibile. L'applicazione sta funzionando in modalità simulatore in-memory.
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="nav-container">
+            <div class="logo-section">
+                <div class="logo-badge">FA</div>
+                <div class="brand-name-group">
+                    <h1 class="brand-name">Fanta-Advisor</h1>
+                </div>
+            </div>
+            <div class="status-section">
+                <div id="connection-status" class="status-badge">
+                    <span id="connection-dot" class="status-dot"></span>
+                    <span id="connection-text">Verifica connessione...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Workspace -->
+    <main>
+        
+        <!-- Left Panel: Players List -->
+        <section class="panel">
+            <div class="panel-header">
+                <h3 class="panel-title">Lista Calciatori</h3>
+                <span id="players-count" style="font-size: 0.8rem; color: var(--text-secondary);">0 / 0</span>
+            </div>
+            
+            <div class="player-search">
+                <input type="text" id="player-search" class="search-input" placeholder="Cerca calciatore o squadra...">
+            </div>
+            
+            <div class="player-filters">
+                <button class="filter-btn active" data-role="all">TUTTI</button>
+                <button class="filter-btn" data-role="P">POR</button>
+                <button class="filter-btn" data-role="D">DIF</button>
+                <button class="filter-btn" data-role="C">CEN</button>
+                <button class="filter-btn" data-role="A">ATT</button>
+            </div>
+            
+            <div class="player-scroll" id="players-list-container">
+                <!-- Javascript populated -->
+            </div>
+        </section>
+
+        <!-- Center Workspace: Bid Controls & Recent logs -->
+        <div class="center-workspace">
+            
+            <!-- Auction Workspace Card -->
+            <section class="bid-card" id="bid-workspace-card">
+                <div class="bid-placeholder" id="bid-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13" stroke-linecap="round" stroke-linejoin="round"></line>
+                        <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" stroke-linejoin="round"></line>
+                        <polyline points="10 9 9 9 8 9" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                    </svg>
+                    <p>Seleziona un calciatore dalla lista a sinistra per iniziare l'asta o registrarne l'acquisto.</p>
+                </div>
+                
+                <div id="bid-active-content" style="display: none;">
+                    <div class="active-player-header">
+                        <div class="active-player-details">
+                            <div class="active-player-avatar" id="active-player-avatar">A</div>
+                            <div class="active-player-text">
+                                <h2 id="active-player-name">Calciatore</h2>
+                                <p id="active-player-team">Squadra</p>
+                            </div>
+                        </div>
+                        <div class="badges-row" id="active-player-badges">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                    
+                    <div class="metric-grid">
+                        <div class="metric-box">
+                            <div class="metric-label">Valore Atteso (EV)</div>
+                            <div class="metric-value highlight-blue" id="active-player-ev">0.0</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Prezzo Iniziale</div>
+                            <div class="metric-value" id="active-player-initial-price">0</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Voto Base Atteso</div>
+                            <div class="metric-value" id="active-player-base-rating">0.0</div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Registration form -->
+                    <div class="bid-form">
+                        <div class="input-group">
+                            <label class="input-label" for="buyer-select">Acquirente (Manager)</label>
+                            <select id="buyer-select">
+                                <option value="">Seleziona manager...</option>
+                                <!-- JS populated -->
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="bid-price">Prezzo Finale</label>
+                            <input type="number" id="bid-price" min="1" value="1">
+                        </div>
+                        
+                        <button class="btn-purchase" id="btn-register-purchase">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.25em; height: 1.25em;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Registra Acquisto
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Recent Purchases -->
+            <section class="panel recent-purchases-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">Ultimi Acquisti Asta</h3>
+                </div>
+                <div class="purchase-history-list" id="purchases-log-container">
+                    <!-- Javascript populated -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Right Panel: Rosters & Budget Summary -->
+        <section class="panel">
+            <div class="panel-header">
+                <h3 class="panel-title">Partecipanti Asta</h3>
+            </div>
+            <div class="managers-scroll" id="managers-list-container">
+                <!-- Javascript populated -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Alert Container -->
+    <div class="alert-container" id="alert-container"></div>
+
+    <!-- Scripts -->
+    <script>
+        // --- CONFIG & STATE ---
+        const API_URL = 'http://localhost:8080/api/v1';
+        let isSimulationMode = false;
+        
+        let state = {
+            players: [],
+            participants: [],
+            purchases: [],
+            selectedPlayerId: null,
+            filters: {
+                role: 'all',
+                search: ''
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const elements = {
+            connectionDot: document.getElementById('connection-dot'),
+            connectionText: document.getElementById('connection-text'),
+            simulationBanner: document.getElementById('simulation-banner'),
+            playersList: document.getElementById('players-list-container'),
+            playersCount: document.getElementById('players-count'),
+            playerSearch: document.getElementById('player-search'),
+            filterBtns: document.querySelectorAll('.filter-btn'),
+            bidPlaceholder: document.getElementById('bid-placeholder'),
+            bidActiveContent: document.getElementById('bid-active-content'),
+            activePlayerAvatar: document.getElementById('active-player-avatar'),
+            activePlayerName: document.getElementById('active-player-name'),
+            activePlayerTeam: document.getElementById('active-player-team'),
+            activePlayerBadges: document.getElementById('active-player-badges'),
+            activePlayerEv: document.getElementById('active-player-ev'),
+            activePlayerInitialPrice: document.getElementById('active-player-initial-price'),
+            activePlayerBaseRating: document.getElementById('active-player-base-rating'),
+            buyerSelect: document.getElementById('buyer-select'),
+            bidPrice: document.getElementById('bid-price'),
+            btnRegisterPurchase: document.getElementById('btn-register-purchase'),
+            purchasesLog: document.getElementById('purchases-log-container'),
+            managersList: document.getElementById('managers-list-container'),
+            alertContainer: document.getElementById('alert-container')
+        };
+
+        // --- MOCK DATABASE FOR OFFLINE SIMULATION ---
+        const mockData = {
+            participants: [
+                { id: 1, name: "Angelo & Socio", initialBudget: 500, remainingBudget: 500 },
+                { id: 2, name: "Mister X", initialBudget: 500, remainingBudget: 500 },
+                { id: 3, name: "FantaBoss", initialBudget: 500, remainingBudget: 500 },
+                { id: 4, name: "Pianeta Calcio", initialBudget: 500, remainingBudget: 500 },
+                { id: 5, name: "Gazzetta Team", initialBudget: 500, remainingBudget: 500 },
+                { id: 6, name: "Gli Scontenti", initialBudget: 500, remainingBudget: 500 },
+                { id: 7, name: "Bomber FC", initialBudget: 500, remainingBudget: 500 },
+                { id: 8, name: "FantaRe", initialBudget: 500, remainingBudget: 500 }
+            ],
+            players: [
+                { id: 1, name: "Yann Sommer", team: "Inter", role: "P", initialQuote: 18, currentQuote: 18, expectedValue: 6.5, expectedBaseRating: 6.2, oopIndex: 0.0, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 2, name: "Mike Maignan", team: "Milan", role: "P", initialQuote: 16, currentQuote: 16, expectedValue: 6.4, expectedBaseRating: 6.1, oopIndex: 0.0, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 3, name: "Michele Di Gregorio", team: "Juventus", role: "P", initialQuote: 15, currentQuote: 15, expectedValue: 6.3, expectedBaseRating: 6.0, oopIndex: 0.0, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 4, name: "Ivan Provedel", team: "Lazio", role: "P", initialQuote: 12, currentQuote: 12, expectedValue: 6.1, expectedBaseRating: 5.9, oopIndex: 0.0, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 5, name: "Federico Dimarco", team: "Inter", role: "D", initialQuote: 20, currentQuote: 20, expectedValue: 7.2, expectedBaseRating: 6.5, oopIndex: 0.6, isOop: true, penaltyTakerPercentage: 0.1, freeKickSpecialistPercentage: 0.6, cornerSpecialistPercentage: 0.7, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 6, name: "Theo Hernandez", team: "Milan", role: "D", initialQuote: 19, currentQuote: 19, expectedValue: 7.0, expectedBaseRating: 6.4, oopIndex: 0.5, isOop: true, penaltyTakerPercentage: 0.3, freeKickSpecialistPercentage: 0.2, cornerSpecialistPercentage: 0.1, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 7, name: "Gleison Bremer", team: "Juventus", role: "D", initialQuote: 18, currentQuote: 18, expectedValue: 6.8, expectedBaseRating: 6.3, oopIndex: 0.1, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 8, name: "Giovanni Di Lorenzo", team: "Napoli", role: "D", initialQuote: 15, currentQuote: 15, expectedValue: 6.6, expectedBaseRating: 6.2, oopIndex: 0.4, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 9, name: "Carlos Augusto", team: "Inter", role: "D", initialQuote: 12, currentQuote: 12, expectedValue: 6.5, expectedBaseRating: 6.1, oopIndex: 0.7, isOop: true, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.1, cornerSpecialistPercentage: 0.2, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 10, name: "Teun Koopmeiners", team: "Juventus", role: "C", initialQuote: 24, currentQuote: 24, expectedValue: 7.8, expectedBaseRating: 6.7, oopIndex: 0.5, isOop: false, penaltyTakerPercentage: 0.8, freeKickSpecialistPercentage: 0.4, cornerSpecialistPercentage: 0.3, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 11, name: "Hakan Calhanoglu", team: "Inter", role: "C", initialQuote: 22, currentQuote: 22, expectedValue: 7.9, expectedBaseRating: 6.6, oopIndex: 0.2, isOop: false, penaltyTakerPercentage: 0.9, freeKickSpecialistPercentage: 0.5, cornerSpecialistPercentage: 0.4, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 12, name: "Nicolo Barella", team: "Inter", role: "C", initialQuote: 18, currentQuote: 18, expectedValue: 7.0, expectedBaseRating: 6.4, oopIndex: 0.3, isOop: false, penaltyTakerPercentage: 0.0, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 13, name: "Christian Pulisic", team: "Milan", role: "C", initialQuote: 21, currentQuote: 21, expectedValue: 7.6, expectedBaseRating: 6.5, oopIndex: 0.8, isOop: true, penaltyTakerPercentage: 0.4, freeKickSpecialistPercentage: 0.3, cornerSpecialistPercentage: 0.4, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 14, name: "Albert Gudmundsson", team: "Fiorentina", role: "C", initialQuote: 20, currentQuote: 20, expectedValue: 7.5, expectedBaseRating: 6.4, oopIndex: 0.8, isOop: true, penaltyTakerPercentage: 0.7, freeKickSpecialistPercentage: 0.5, cornerSpecialistPercentage: 0.5, isSetPieceSpecialist: true, isAvailable: true },
+                { id: 15, name: "Lautaro Martinez", team: "Inter", role: "A", initialQuote: 38, currentQuote: 38, expectedValue: 8.8, expectedBaseRating: 6.8, oopIndex: 0.9, isOop: false, penaltyTakerPercentage: 0.8, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 16, name: "Dusan Vlahovic", team: "Juventus", role: "A", initialQuote: 35, currentQuote: 35, expectedValue: 8.5, expectedBaseRating: 6.5, oopIndex: 0.9, isOop: false, penaltyTakerPercentage: 0.8, freeKickSpecialistPercentage: 0.2, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true },
+                { id: 17, name: "Rafael Leao", team: "Milan", role: "A", initialQuote: 32, currentQuote: 32, expectedValue: 8.2, expectedBaseRating: 6.6, oopIndex: 0.9, isOop: false, penaltyTakerPercentage: 0.1, freeKickSpecialistPercentage: 0.0, cornerSpecialistPercentage: 0.0, isSetPieceSpecialist: false, isAvailable: true }
+            ]
+        };
+
+        // --- ALERTS ---
+        function toast(message, type = 'info') {
+            const el = document.createElement('div');
+            el.className = `toast-alert ${type}`;
+            el.innerHTML = `
+                <span>${message}</span>
+                <button class="toast-close">&times;</button>
+            `;
+            elements.alertContainer.appendChild(el);
+            
+            // Auto remove
+            const timeout = setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }, 4000);
+
+            el.querySelector('.toast-close').addEventListener('click', () => {
+                clearTimeout(timeout);
+                el.remove();
+            });
+        }
+
+        // --- API INTEGRATION ---
+        async function checkConnection() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                if (res.ok) {
+                    setConnectionState(true);
+                    return true;
+                }
+            } catch (e) {
+                // fall through
+            }
+            setConnectionState(false);
+            return false;
+        }
+
+        function setConnectionState(online) {
+            if (online) {
+                elements.connectionDot.className = "status-dot online";
+                elements.connectionText.textContent = "Connesso all'API";
+                elements.simulationBanner.classList.remove('active');
+                isSimulationMode = false;
+            } else {
+                elements.connectionDot.className = "status-dot offline";
+                elements.connectionText.textContent = "Offline (Simulazione)";
+                elements.simulationBanner.classList.add('active');
+                isSimulationMode = true;
+            }
+        }
+
+        async function fetchData() {
+            if (isSimulationMode) {
+                // Use local mock database
+                if (state.players.length === 0) {
+                    state.players = JSON.parse(JSON.stringify(mockData.players));
+                    state.participants = JSON.parse(JSON.stringify(mockData.participants));
+                    state.purchases = [];
+                }
+                render();
+                return;
+            }
+
+            try {
+                // Fetch players
+                const playersRes = await fetch(`${API_URL}/players`);
+                if (playersRes.ok) {
+                    state.players = await playersRes.json();
+                }
+
+                // Fetch draft state (participants & purchases)
+                const draftRes = await fetch(`${API_URL}/draft/state`);
+                if (draftRes.ok) {
+                    const draftData = await draftRes.json();
+                    state.participants = draftData.participants || [];
+                    state.purchases = draftData.recent_purchases || [];
+                    
+                    // Mark purchased players as unavailable
+                    const purchasedIds = new Set(state.purchases.map(p => p.player.id));
+                    state.players.forEach(p => {
+                        if (purchasedIds.has(p.id)) {
+                            p.isAvailable = false;
+                        }
+                    });
+                }
+                
+                render();
+            } catch (err) {
+                console.error("Errore fetch dati: ", err);
+                toast("Errore nel caricamento dei dati dall'API. Passaggio a simulatore.", "warning");
+                setConnectionState(false);
+                fetchData();
+            }
+        }
+
+        async function registerPurchase(playerId, participantId, price) {
+            if (isSimulationMode) {
+                // Process in-memory simulation
+                const playerIndex = state.players.findIndex(p => p.id === playerId);
+                const participantIndex = state.participants.findIndex(pt => pt.id === participantId);
+
+                if (playerIndex === -1 || participantIndex === -1) {
+                    toast("Giocatore o manager non trovato", "error");
+                    return;
+                }
+
+                const player = state.players[playerIndex];
+                const participant = state.participants[participantIndex];
+
+                if (!player.isAvailable) {
+                    toast("Calciatore già acquistato!", "error");
+                    return;
+                }
+
+                if (participant.remainingBudget < price) {
+                    toast(`Crediti insufficienti per ${participant.name}! Massimo possibile: ${participant.remainingBudget}`, "error");
+                    return;
+                }
+
+                // Deduct credits and update
+                participant.remainingBudget -= price;
+                player.isAvailable = false;
+                player.currentQuote = price;
+
+                // Log purchase
+                const newPurchase = {
+                    id: Date.now(),
+                    player: player,
+                    participant: participant,
+                    price: price
+                };
+                
+                state.purchases.unshift(newPurchase);
+                state.selectedPlayerId = null;
+                
+                toast(`Acquisto registrato: ${player.name} a ${participant.name} per ${price} crediti!`, "success");
+                render();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/draft/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playerId: playerId,
+                        buyerParticipantId: participantId,
+                        price: price
+                    })
+                });
+
+                if (res.ok) {
+                    const purchase = await res.json();
+                    toast(`Acquisto registrato correttamente!`, "success");
+                    state.selectedPlayerId = null;
+                    fetchData(); // reload
+                } else {
+                    const errData = await res.json();
+                    toast(errData.error || "Errore durante la registrazione", "error");
+                }
+            } catch (err) {
+                toast("Impossibile connettersi al server per registrare l'acquisto", "error");
+            }
+        }
+
+        // --- RENDERING LOGIC ---
+        function render() {
+            renderPlayersList();
+            renderActivePlayer();
+            renderManagersList();
+            renderPurchasesLog();
+            populateManagersSelect();
+        }
+
+        function renderPlayersList() {
+            elements.playersList.innerHTML = '';
+            
+            const filteredPlayers = state.players.filter(p => {
+                const matchesRole = state.filters.role === 'all' || p.role === state.filters.role;
+                const matchesSearch = p.name.toLowerCase().includes(state.filters.search.toLowerCase()) || 
+                                      p.team.toLowerCase().includes(state.filters.search.toLowerCase());
+                return matchesRole && matchesSearch && p.isAvailable;
+            });
+
+            elements.playersCount.textContent = `${filteredPlayers.length} disponibili`;
+
+            if (filteredPlayers.length === 0) {
+                elements.playersList.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                        Nessun calciatore disponibile trovato.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredPlayers.forEach(p => {
+                const item = document.createElement('div');
+                item.className = `player-item ${state.selectedPlayerId === p.id ? 'selected' : ''}`;
+                
+                let badges = '';
+                if (p.isOop) badges += `<span class="small-badge badge-oop">OOP</span>`;
+                if (p.isSetPieceSpecialist) badges += `<span class="small-badge badge-sp">Piazzati</span>`;
+
+                item.innerHTML = `
+                    <div class="player-info">
+                        <div class="role-badge role-${p.role}">${p.role}</div>
+                        <div class="player-name-team">
+                            <span class="player-name">${p.name}</span>
+                            <span class="player-team">${p.team}</span>
+                        </div>
+                    </div>
+                    <div class="player-meta">
+                        <span class="player-ev">EV: ${p.expectedValue.toFixed(2)}</span>
+                        <div class="badges-row">${badges}</div>
+                    </div>
+                `;
+
+                item.addEventListener('click', () => {
+                    state.selectedPlayerId = p.id;
+                    render();
+                });
+
+                elements.playersList.appendChild(item);
+            });
+        }
+
+        function renderActivePlayer() {
+            if (!state.selectedPlayerId) {
+                elements.bidPlaceholder.style.display = 'flex';
+                elements.bidActiveContent.style.display = 'none';
+                return;
+            }
+
+            const player = state.players.find(p => p.id === state.selectedPlayerId);
+            if (!player) return;
+
+            elements.bidPlaceholder.style.display = 'none';
+            elements.bidActiveContent.style.display = 'block';
+
+            elements.activePlayerName.textContent = player.name;
+            elements.activePlayerTeam.textContent = player.team;
+            
+            elements.activePlayerAvatar.textContent = player.role;
+            elements.activePlayerAvatar.className = `active-player-avatar role-${player.role}`;
+            
+            elements.activePlayerEv.textContent = player.expectedValue.toFixed(2);
+            elements.activePlayerInitialPrice.textContent = player.initialQuote;
+            elements.activePlayerBaseRating.textContent = player.expectedBaseRating.toFixed(2);
+
+            elements.bidPrice.value = player.initialQuote;
+
+            // Render badges
+            elements.activePlayerBadges.innerHTML = '';
+            if (player.isOop) {
+                elements.activePlayerBadges.innerHTML += `<span class="small-badge badge-oop" title="Indice Fuori Posizione: ${player.oopIndex}">Out Of Position</span>`;
+            }
+            if (player.isSetPieceSpecialist) {
+                let pieceInfo = [];
+                if (player.penaltyTakerPercentage > 0) pieceInfo.push(`Rigori: ${Math.round(player.penaltyTakerPercentage * 100)}%`);
+                if (player.freeKickSpecialistPercentage > 0) pieceInfo.push(`Punizioni: ${Math.round(player.freeKickSpecialistPercentage * 100)}%`);
+                if (player.cornerSpecialistPercentage > 0) pieceInfo.push(`Corner: ${Math.round(player.cornerSpecialistPercentage * 100)}%`);
+                elements.activePlayerBadges.innerHTML += `<span class="small-badge badge-sp" title="${pieceInfo.join(', ')}">Specialista Piazzati</span>`;
+            }
+        }
+
+        function renderManagersList() {
+            elements.managersList.innerHTML = '';
+            
+            state.participants.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'manager-card';
+                
+                // Count roles in manager roster
+                const managerPurchases = state.purchases.filter(p => p.participant.id === m.id);
+                const slots = { P: 0, D: 0, C: 0, A: 0 };
+                managerPurchases.forEach(p => {
+                    if (slots[p.player.role] !== undefined) {
+                        slots[p.player.role]++;
+                    }
+                });
+
+                // Calculate maximum possible bid: remaining budget - (required players count - current players count)
+                // Assuming standard squad size: 3 Portieri, 8 Difensori, 8 Centrocampisti, 6 Attaccanti (Total 25 players)
+                const totalPlayers = slots.P + slots.D + slots.C + slots.A;
+                const requiredSlotsRemaining = Math.max(0, 25 - totalPlayers);
+                const maxBidPossible = m.remainingBudget - requiredSlotsRemaining + 1;
+
+                card.innerHTML = `
+                    <div class="manager-summary">
+                        <span class="manager-name">${m.name}</span>
+                        <div class="manager-budget">
+                            <span class="budget-value">${m.remainingBudget} FM</span>
+                            <span class="max-bid">Bid Max: ${Math.max(1, maxBidPossible)}</span>
+                        </div>
+                    </div>
+                    <div class="manager-slots">
+                        <div class="slot-pill"><span class="slot-role">P</span><span class="slot-count">${slots.P}/3</span></div>
+                        <div class="slot-pill"><span class="slot-role">D</span><span class="slot-count">${slots.D}/8</span></div>
+                        <div class="slot-pill"><span class="slot-role">C</span><span class="slot-count">${slots.C}/8</span></div>
+                        <div class="slot-pill"><span class="slot-role">A</span><span class="slot-count">${slots.A}/6</span></div>
+                    </div>
+                `;
+
+                elements.managersList.appendChild(card);
+            });
+        }
+
+        function populateManagersSelect() {
+            // Keep the selected value if any
+            const currentSelected = elements.buyerSelect.value;
+            
+            elements.buyerSelect.innerHTML = '<option value="">Seleziona manager...</option>';
+            state.participants.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.name} (${m.remainingBudget} FM rimasti)`;
+                elements.buyerSelect.appendChild(opt);
+            });
+
+            elements.buyerSelect.value = currentSelected;
+        }
+
+        function renderPurchasesLog() {
+            elements.purchasesLog.innerHTML = '';
+            
+            if (state.purchases.length === 0) {
+                elements.purchasesLog.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                        Nessun acquisto registrato in questa sessione.
+                    </div>
+                `;
+                return;
+            }
+
+            state.purchases.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'purchase-history-item';
+                item.innerHTML = `
+                    <div class="purchase-user">
+                        <div class="role-badge role-${p.player.role}">${p.player.role}</div>
+                        <div>
+                            <strong>${p.player.name}</strong> 
+                            <span style="color: var(--text-secondary); font-size:0.8rem;">acquistato da</span> 
+                            <strong>${p.participant.name}</strong>
+                        </div>
+                    </div>
+                    <span class="purchase-price">${p.price} FM</span>
+                `;
+                elements.purchasesLog.appendChild(item);
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        elements.playerSearch.addEventListener('input', (e) => {
+            state.filters.search = e.target.value;
+            renderPlayersList();
+        });
+
+        elements.filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                elements.filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.filters.role = btn.dataset.role;
+                renderPlayersList();
+            });
+        });
+
+        elements.btnRegisterPurchase.addEventListener('click', () => {
+            const playerId = state.selectedPlayerId;
+            const participantId = parseInt(elements.buyerSelect.value);
+            const price = parseInt(elements.bidPrice.value);
+
+            if (!playerId) {
+                toast("Seleziona prima un calciatore!", "error");
+                return;
+            }
+            if (!participantId || isNaN(participantId)) {
+                toast("Seleziona il manager acquirente!", "error");
+                return;
+            }
+            if (isNaN(price) || price < 1) {
+                toast("Inserisci un prezzo valido (minimo 1 credito)!", "error");
+                return;
+            }
+
+            registerPurchase(playerId, participantId, price);
+        });
+
+        // --- INITIALIZATION ---
+        async function init() {
+            const online = await checkConnection();
+            setConnectionState(online);
+            await fetchData();
+            
+            // Periodically check connection and refresh
+            setInterval(async () => {
+                const isOnline = await checkConnection();
+                if (isOnline !== !isSimulationMode) {
+                    setConnectionState(isOnline);
+                    fetchData();
+                }
+            }, 8000);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
