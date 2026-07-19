@@ -725,6 +725,216 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 11, 16, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--card-shadow);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.75rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        /* Modal Form Styles */
+        .modal-form {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 16px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-solid);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        
+        .btn-primary, .btn-secondary {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--accent-solid);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--border-hover);
+        }
+        
+        /* Table Styles */
+        .teams-table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .teams-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+        
+        .teams-table th, .teams-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .teams-table th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .teams-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        .btn-table-action {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-left: 0.5rem;
+        }
+        
+        .btn-table-action.edit {
+            color: var(--accent-warning);
+        }
+        
+        .btn-table-action.delete {
+            color: var(--accent-error);
+        }
+        
+        .btn-table-action:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -862,8 +1072,9 @@
 
         <!-- Right Panel: Rosters & Budget Summary -->
         <section class="panel">
-            <div class="panel-header">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="panel-title">Partecipanti Asta</h3>
+                <button class="btn-secondary" id="btn-manage-teams" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; margin: 0;">Gestisci</button>
             </div>
             <div class="managers-scroll" id="managers-list-container">
                 <!-- Javascript populated -->
@@ -871,6 +1082,60 @@
         </section>
 
     </main>
+
+    <!-- Modal for Team Management -->
+    <div class="modal-overlay" id="teams-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gestione Squadre (Partecipanti Asta)</h3>
+                <button class="modal-close" id="btn-close-teams-modal">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Form to Add/Edit Team -->
+                <form id="team-form" class="modal-form">
+                    <input type="hidden" id="edit-team-id" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="team-name-input">Nome Squadra</label>
+                            <input type="text" id="team-name-input" placeholder="Es. FantaBoss" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="team-initial-budget-input">Budget Iniziale</label>
+                            <input type="number" id="team-initial-budget-input" min="1" value="500" required>
+                        </div>
+                        <div class="form-group" id="remaining-budget-group" style="display: none;">
+                            <label for="team-remaining-budget-input">Budget Rimanente</label>
+                            <input type="number" id="team-remaining-budget-input" min="0" value="500">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="btn-submit-team">Aggiungi Squadra</button>
+                        <button type="button" class="btn-secondary" id="btn-cancel-edit" style="display: none;">Annulla</button>
+                    </div>
+                </form>
+                
+                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <!-- Teams Table -->
+                <div class="teams-table-container">
+                    <table class="teams-table">
+                        <thead>
+                            <tr>
+                                <th>Nome Squadra</th>
+                                <th>Budget Iniziale</th>
+                                <th>Budget Rimanente</th>
+                                <th style="text-align: right;">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teams-table-body">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Alert Container -->
     <div class="alert-container" id="alert-container"></div>
@@ -915,7 +1180,19 @@
             btnRegisterPurchase: document.getElementById('btn-register-purchase'),
             purchasesLog: document.getElementById('purchases-log-container'),
             managersList: document.getElementById('managers-list-container'),
-            alertContainer: document.getElementById('alert-container')
+            alertContainer: document.getElementById('alert-container'),
+            btnManageTeams: document.getElementById('btn-manage-teams'),
+            teamsModal: document.getElementById('teams-modal'),
+            btnCloseTeamsModal: document.getElementById('btn-close-teams-modal'),
+            teamForm: document.getElementById('team-form'),
+            editTeamId: document.getElementById('edit-team-id'),
+            teamNameInput: document.getElementById('team-name-input'),
+            teamInitialBudgetInput: document.getElementById('team-initial-budget-input'),
+            remainingBudgetGroup: document.getElementById('remaining-budget-group'),
+            teamRemainingBudgetInput: document.getElementById('team-remaining-budget-input'),
+            btnSubmitTeam: document.getElementById('btn-submit-team'),
+            btnCancelEdit: document.getElementById('btn-cancel-edit'),
+            teamsTableBody: document.getElementById('teams-table-body')
         };
 
         // --- MOCK DATABASE FOR OFFLINE SIMULATION ---
@@ -1019,6 +1296,7 @@
                 const playersRes = await fetch(`${API_URL}/players`);
                 if (playersRes.ok) {
                     state.players = await playersRes.json();
+                    state.players.forEach(p => p.isAvailable = true);
                 }
 
                 // Fetch draft state (participants & purchases)
@@ -1254,6 +1532,15 @@
                     </div>
                 `;
 
+                card.addEventListener('click', () => {
+                    if (!state.selectedPlayerId) {
+                        toast("Seleziona prima un calciatore dalla lista a sinistra!", "warning");
+                        return;
+                    }
+                    elements.buyerSelect.value = m.id;
+                    toast(`Selezionato acquirente: ${m.name}`, "info");
+                });
+
                 elements.managersList.appendChild(card);
             });
         }
@@ -1338,6 +1625,205 @@
 
             registerPurchase(playerId, participantId, price);
         });
+
+        // --- TEAMS MODAL & CRUD LOGIC ---
+        elements.btnManageTeams.addEventListener('click', () => {
+            elements.teamsModal.classList.add('active');
+            resetTeamForm();
+            renderTeamsModal();
+        });
+
+        elements.btnCloseTeamsModal.addEventListener('click', () => {
+            elements.teamsModal.classList.remove('active');
+        });
+
+        // Close modal when clicking outside
+        elements.teamsModal.addEventListener('click', (e) => {
+            if (e.target === elements.teamsModal) {
+                elements.teamsModal.classList.remove('active');
+            }
+        });
+
+        function resetTeamForm() {
+            elements.editTeamId.value = '';
+            elements.teamNameInput.value = '';
+            elements.teamInitialBudgetInput.value = 500;
+            elements.remainingBudgetGroup.style.display = 'none';
+            elements.teamRemainingBudgetInput.value = 500;
+            elements.btnSubmitTeam.textContent = 'Aggiungi Squadra';
+            elements.btnCancelEdit.style.display = 'none';
+        }
+
+        elements.btnCancelEdit.addEventListener('click', resetTeamForm);
+
+        function renderTeamsModal() {
+            elements.teamsTableBody.innerHTML = '';
+            
+            state.participants.forEach(m => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${m.name}</td>
+                    <td>${m.initialBudget} FM</td>
+                    <td>${m.remainingBudget} FM</td>
+                    <td style="text-align: right;">
+                        <button class="btn-table-action edit" title="Modifica" data-id="${m.id}">
+                            ✏️
+                        </button>
+                        <button class="btn-table-action delete" title="Elimina" data-id="${m.id}">
+                            🗑️
+                        </button>
+                    </td>
+                `;
+                
+                // Add event listeners to the actions inside the table
+                tr.querySelector('.edit').addEventListener('click', () => startEditTeam(m));
+                tr.querySelector('.delete').addEventListener('click', () => deleteTeamAction(m.id));
+                
+                elements.teamsTableBody.appendChild(tr);
+            });
+        }
+
+        function startEditTeam(team) {
+            elements.editTeamId.value = team.id;
+            elements.teamNameInput.value = team.name;
+            elements.teamInitialBudgetInput.value = team.initialBudget;
+            elements.remainingBudgetGroup.style.display = 'flex';
+            elements.teamRemainingBudgetInput.value = team.remainingBudget;
+            elements.btnSubmitTeam.textContent = 'Aggiorna Squadra';
+            elements.btnCancelEdit.style.display = 'inline-block';
+        }
+
+        elements.teamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = elements.editTeamId.value;
+            const name = elements.teamNameInput.value.trim();
+            const initialBudget = parseInt(elements.teamInitialBudgetInput.value);
+            const remainingBudget = parseInt(elements.teamRemainingBudgetInput.value);
+            
+            if (!name) {
+                toast("Il nome della squadra è obbligatorio!", "error");
+                return;
+            }
+            if (isNaN(initialBudget) || initialBudget < 1) {
+                toast("Budget iniziale non valido!", "error");
+                return;
+            }
+
+            if (id) {
+                // UPDATE Team
+                if (isSimulationMode) {
+                    const duplicate = state.participants.find(p => p.name.toLowerCase() === name.toLowerCase() && p.id !== parseInt(id));
+                    if (duplicate) {
+                        toast("Una squadra con questo nome esiste già!", "error");
+                        return;
+                    }
+                    const index = state.participants.findIndex(p => p.id === parseInt(id));
+                    if (index !== -1) {
+                        state.participants[index].name = name;
+                        state.participants[index].initialBudget = initialBudget;
+                        state.participants[index].remainingBudget = remainingBudget;
+                        toast("Squadra aggiornata localmente!", "success");
+                        resetTeamForm();
+                        renderTeamsModal();
+                        render();
+                    }
+                } else {
+                    try {
+                        const res = await fetch(`${API_URL}/teams/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, initialBudget, remainingBudget })
+                        });
+                        if (res.ok) {
+                            toast("Squadra aggiornata con successo!", "success");
+                            resetTeamForm();
+                            await fetchData();
+                            renderTeamsModal();
+                        } else {
+                            const err = await res.json();
+                            toast(err.error || "Errore durante l'aggiornamento", "error");
+                        }
+                    } catch (e) {
+                        toast("Errore di connessione al server", "error");
+                    }
+                }
+            } else {
+                // CREATE Team
+                if (isSimulationMode) {
+                    const duplicate = state.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
+                    if (duplicate) {
+                        toast("Una squadra con questo nome esiste già!", "error");
+                        return;
+                    }
+                    const newId = Date.now();
+                    state.participants.push({
+                        id: newId,
+                        name: name,
+                        initialBudget: initialBudget,
+                        remainingBudget: initialBudget
+                    });
+                    toast("Squadra creata localmente!", "success");
+                    resetTeamForm();
+                    renderTeamsModal();
+                    render();
+                } else {
+                    try {
+                        const res = await fetch(`${API_URL}/teams`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, initialBudget })
+                        });
+                        if (res.ok) {
+                            toast("Squadra creata con successo!", "success");
+                            resetTeamForm();
+                            await fetchData();
+                            renderTeamsModal();
+                        } else {
+                            const err = await res.json();
+                            toast(err.error || "Errore durante la creazione", "error");
+                        }
+                    } catch (e) {
+                        toast("Errore di connessione al server", "error");
+                    }
+                }
+            }
+        });
+
+        async function deleteTeamAction(id) {
+            if (!confirm("Sei sicuro di voler eliminare questa squadra?")) {
+                return;
+            }
+
+            if (isSimulationMode) {
+                const hasPurchases = state.purchases.some(p => p.participant.id === id);
+                if (hasPurchases) {
+                    toast("Impossibile eliminare una squadra con acquisti attivi!", "error");
+                    return;
+                }
+                state.participants = state.participants.filter(p => p.id !== id);
+                toast("Squadra eliminata localmente!", "success");
+                renderTeamsModal();
+                render();
+            } else {
+                try {
+                    const res = await fetch(`${API_URL}/teams/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (res.ok) {
+                        toast("Squadra eliminata con successo!", "success");
+                        await fetchData();
+                        renderTeamsModal();
+                    } else {
+                        const err = await res.json();
+                        toast(err.error || "Errore durante l'eliminazione", "error");
+                    }
+                } catch (e) {
+                    toast("Errore di connessione al server", "error");
+                }
+            }
+        }
 
         // --- INITIALIZATION ---
         async function init() {
