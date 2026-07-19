@@ -47,7 +47,7 @@
         <!-- OpenAPI (Swagger UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>spring-doc-openapi-starter-webmvc-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
         <!-- Lombok to reduce boilerplate -->
