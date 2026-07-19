@@ -1,17 +1,9 @@
 package com.fantaadvisor.shared.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "purchases")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Purchase {
 
     @Id
@@ -19,7 +11,7 @@ public class Purchase {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "player_id", nullable = false, unique = true) // Ciascun giocatore può essere acquistato al massimo da una persona
+    @JoinColumn(name = "player_id", nullable = false, unique = true)
     private Player player;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,4 +20,27 @@ public class Purchase {
 
     @Column(nullable = false)
     private Integer price;
+
+    // Constructors
+    public Purchase() {}
+
+    public Purchase(Long id, Player player, AuctionParticipant participant, Integer price) {
+        this.id = id;
+        this.player = player;
+        this.participant = participant;
+        this.price = price;
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Player getPlayer() { return player; }
+    public void setPlayer(Player player) { this.player = player; }
+
+    public AuctionParticipant getParticipant() { return participant; }
+    public void setParticipant(AuctionParticipant participant) { this.participant = participant; }
+
+    public Integer getPrice() { return price; }
+    public void setPrice(Integer price) { this.price = price; }
 }

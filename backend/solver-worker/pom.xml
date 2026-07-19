@@ -46,13 +46,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Lombok to reduce boilerplate -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
