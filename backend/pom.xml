@@ -28,6 +28,7 @@
     </properties>
 
     <modules>
+        <module>shared</module>
         <module>api-gateway</module>
         <module>solver-worker</module>
         <module>scraper-service</module>
