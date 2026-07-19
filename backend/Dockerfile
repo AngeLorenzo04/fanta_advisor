@@ -5,6 +5,7 @@ WORKDIR /build
 
 # Copy POM files first for dependency caching
 COPY pom.xml .
+COPY shared/pom.xml shared/
 COPY api-gateway/pom.xml api-gateway/
 COPY solver-worker/pom.xml solver-worker/
 COPY scraper-service/pom.xml scraper-service/

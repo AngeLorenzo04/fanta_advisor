@@ -39,6 +39,13 @@
             <version>9.8.3296</version>
         </dependency>
 
+        <!-- Shared domain model module -->
+        <dependency>
+            <groupId>com.fantaadvisor</groupId>
+            <artifactId>shared</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok to reduce boilerplate -->
         <dependency>
             <groupId>org.projectlombok</groupId>
