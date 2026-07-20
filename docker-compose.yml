@@ -1,70 +1,14 @@
 version: '3.8'
 
 services:
-  # 1. API Gateway Service
-  api-gateway:
-    build:
-      context: ./backend
-      args:
-        MODULE: api-gateway
-    container_name: fanta-api-gateway
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/fanta_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-    depends_on:
-      - redis
-      - db
-
-  # 2. Solver & Optimization Worker Service
-  solver-worker:
-    build:
-      context: ./backend
-      args:
-        MODULE: solver-worker
-    container_name: fanta-solver-worker
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/fanta_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-    depends_on:
-      - redis
-      - db
-
-  # 3. Scraper Service
-  scraper-service:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.scraper
-    container_name: fanta-scraper-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/fanta_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-    depends_on:
-      - redis
-      - db
-
-  # 4. Message Broker (Redis)
+  # 1. Message Broker (Redis) - Keep for future asynchronous Next.js jobs if needed
   redis:
     image: redis:7-alpine
     container_name: fanta-redis-broker
     ports:
       - "6379:6379"
 
-  # 5. Local Dev Database (PostgreSQL)
+  # 2. Local Dev Database (PostgreSQL) - Required by Next.js and Prisma
   db:
     image: postgres:16-alpine
     container_name: fanta-postgres-db
