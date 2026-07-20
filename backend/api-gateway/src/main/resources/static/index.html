@@ -1117,6 +1117,105 @@
             font-size: 0.85rem;
         }
 
+        /* Pitch Layout Styles */
+        .pitch-container {
+            background: linear-gradient(0deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            position: relative;
+            width: 100%;
+            height: 480px;
+            display: flex;
+            flex-direction: column-reverse; /* GK at bottom */
+            justify-content: space-around;
+            padding: 1rem 0;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .pitch-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .pitch-container::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+        }
+
+        .pitch-row {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .player-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 80px;
+            text-align: center;
+        }
+
+        .player-node:hover {
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        .jersey-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 4px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        .player-name-plate {
+            background: rgba(20, 20, 30, 0.8);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-score-plate {
+            background: var(--accent-solid);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-top: -6px; /* Overlap with jersey/name slightly */
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         /* Evaluation Workspace Styles */
         .evaluation-grid {
             display: flex;
@@ -2937,7 +3036,64 @@
             elements.lineupStarters.innerHTML = '';
             elements.lineupBench.innerHTML = '';
 
-            const renderPlayer = (dto, isStarter) => {
+            const getJerseySvg = (roleColor) => `
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="jersey-icon">
+              <!-- Sleeves (Gold) -->
+              <path d="M 20 20 L 2 45 L 20 60 L 30 40 Z" fill="#bfa15f"/>
+              <path d="M 80 20 L 98 45 L 80 60 L 70 40 Z" fill="#bfa15f"/>
+              <!-- Body (Black) -->
+              <path d="M 25 20 Q 50 5 75 20 L 75 95 L 25 95 Z" fill="#1a1a1a"/>
+              <!-- Collar colored by Role -->
+              <path d="M 40 20 Q 50 35 60 20" fill="none" stroke="${roleColor}" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            `;
+
+            // --- Render Starters on Pitch ---
+            const pitch = document.createElement('div');
+            pitch.className = 'pitch-container';
+
+            // Group starters by role: P, D, C, A
+            const rolesOrder = ['P', 'D', 'C', 'A']; // From bottom to top
+            rolesOrder.forEach(role => {
+                const playersInRole = lineupData.starting11.filter(p => p.player.role === role);
+                if (playersInRole.length === 0) return;
+
+                const row = document.createElement('div');
+                row.className = 'pitch-row';
+
+                playersInRole.forEach(dto => {
+                    const roleColor = role === 'P' ? '#f59e0b' : 
+                                      role === 'D' ? '#3b82f6' : 
+                                      role === 'C' ? '#10b981' : '#ef4444';
+                    
+                    let modText = dto.matchModifier > 0 ? `+${dto.matchModifier.toFixed(1)}` : dto.matchModifier.toFixed(1);
+                    let modColor = dto.matchModifier > 0 ? 'var(--accent-success)' : dto.matchModifier < 0 ? 'var(--accent-error)' : '#aaa';
+
+                    const node = document.createElement('div');
+                    node.className = 'player-node';
+                    node.title = `${dto.player.name} vs ${dto.opponentTeam} (Modificatore: ${modText})`;
+                    node.innerHTML = `
+                        ${getJerseySvg(roleColor)}
+                        <div class="player-name-plate">${dto.player.name}</div>
+                        <div class="player-score-plate">
+                            <span style="font-size:0.6rem; color:${modColor};">${modText}</span>
+                            <span>${dto.expectedMatchScore.toFixed(2)}</span>
+                        </div>
+                    `;
+
+                    node.addEventListener('click', () => {
+                        toast("Seleziona un panchinaro per sostituire questo titolare", "info");
+                    });
+
+                    row.appendChild(node);
+                });
+                pitch.appendChild(row);
+            });
+
+            elements.lineupStarters.appendChild(pitch);
+
+            // --- Render Bench as vertical list ---
+            const renderBenchPlayer = (dto) => {
                 const div = document.createElement('div');
                 div.className = 'roster-player-item';
                 div.style.cursor = 'pointer';
@@ -2968,45 +3124,36 @@
                 // Swap logic on click
                 div.addEventListener('click', async () => {
                     const starters = lineupData.starting11.map(p => p.player.id);
-                    if (isStarter) {
-                        // Remove from starters if click (needs replacement)
-                        toast("Seleziona un panchinaro per sostituirlo", "info");
-                    } else {
-                        // Find a starter with same role to swap (simplistic MVP swap)
-                        const targetRole = dto.player.role;
-                        const starterIdx = lineupData.starting11.findIndex(p => p.player.role === targetRole);
-                        if (starterIdx >= 0) {
-                            starters[starterIdx] = dto.player.id; // Swap
-                            try {
-                                const reqBody = { startingPlayerIds: starters };
-                                const res = await fetch(`${API_URL}/lineups/${participantId}/evaluate`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(reqBody)
-                                });
-                                if (res.ok) {
-                                    const newData = await res.json();
-                                    renderLineup(newData, participantId);
-                                    toast(`Sostituzione effettuata: ${dto.player.name}`, "success");
-                                }
-                            } catch (e) {
-                                toast("Errore durante la sostituzione", "error");
+                    // Find a starter with same role to swap (simplistic MVP swap)
+                    const targetRole = dto.player.role;
+                    const starterIdx = lineupData.starting11.findIndex(p => p.player.role === targetRole);
+                    if (starterIdx >= 0) {
+                        starters[starterIdx] = dto.player.id; // Swap
+                        try {
+                            const reqBody = { startingPlayerIds: starters };
+                            const res = await fetch(`${API_URL}/lineups/${participantId}/evaluate`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(reqBody)
+                            });
+                            if (res.ok) {
+                                const newData = await res.json();
+                                renderLineup(newData, participantId);
+                                toast(`Sostituzione effettuata: ${dto.player.name}`, "success");
                             }
-                        } else {
-                            toast("Nessun titolare dello stesso ruolo da sostituire", "warning");
+                        } catch (e) {
+                            toast("Errore durante la sostituzione", "error");
                         }
+                    } else {
+                        toast("Nessun titolare dello stesso ruolo da sostituire", "warning");
                     }
                 });
 
                 return div;
             };
 
-            lineupData.starting11.forEach(p => {
-                elements.lineupStarters.appendChild(renderPlayer(p, true));
-            });
-
             lineupData.bench.forEach(p => {
-                elements.lineupBench.appendChild(renderPlayer(p, false));
+                elements.lineupBench.appendChild(renderBenchPlayer(p));
             });
         }
 
