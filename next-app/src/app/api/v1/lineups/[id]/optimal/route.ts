@@ -1,22 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Fallback fixtures data (instead of making an HTTP call to ourselves)
-const getFixtures = () => {
-  return [
-    { homeTeam: "Inter", awayTeam: "Monza", homeTeamStrength: 5, awayTeamStrength: 3 },
-    { homeTeam: "Milan", awayTeam: "Lecce", homeTeamStrength: 5, awayTeamStrength: 2 },
-    { homeTeam: "Roma", awayTeam: "Napoli", homeTeamStrength: 4, awayTeamStrength: 5 },
-    { homeTeam: "Atalanta", awayTeam: "Venezia", homeTeamStrength: 5, awayTeamStrength: 1 },
-    { homeTeam: "Fiorentina", awayTeam: "Lazio", homeTeamStrength: 4, awayTeamStrength: 4 },
-    { homeTeam: "Genoa", awayTeam: "Bologna", homeTeamStrength: 3, awayTeamStrength: 3 },
-    { homeTeam: "Torino", awayTeam: "Juventus", homeTeamStrength: 3, awayTeamStrength: 5 },
-    { homeTeam: "Udinese", awayTeam: "Cagliari", homeTeamStrength: 2, awayTeamStrength: 2 },
-    { homeTeam: "Verona", awayTeam: "Empoli", homeTeamStrength: 2, awayTeamStrength: 2 },
-    { homeTeam: "Parma", awayTeam: "Como", homeTeamStrength: 2, awayTeamStrength: 2 }
-  ];
-};
-
 function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
   const team = player.team;
   let opponentStrength = 3;
@@ -54,7 +38,7 @@ function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
 
   return {
     player,
-    modifier,
+    matchModifier: modifier,
     expectedMatchScore,
     opponentTeam
   };
@@ -68,7 +52,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       include: { player: true }
     });
 
-    const fixtures = getFixtures();
+    const fixtures = await prisma.matchFixture.findMany();
 
     let evaluatedPlayers = purchases.map(p => evaluatePlayerForMatchday(p.player, fixtures));
     evaluatedPlayers.sort((a, b) => b.expectedMatchScore - a.expectedMatchScore);
@@ -106,9 +90,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
           let bench = evaluatedPlayers.filter(p => !starters.includes(p));
           
           bestLineup = {
-            starters,
+            starting11: starters,
             bench,
-            expectedTotalScore: currentScore,
+            totalProjectedScore: currentScore,
             formation: formationStr
           };
         }
@@ -117,7 +101,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     if (!bestLineup) {
       bestLineup = {
-        starters: evaluatedPlayers,
+        starting11: evaluatedPlayers,
         bench: [],
         expectedTotalScore: 0.0,
         formation: "N/A"

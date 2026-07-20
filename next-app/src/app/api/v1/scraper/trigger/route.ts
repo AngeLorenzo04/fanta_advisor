@@ -123,14 +123,21 @@ export async function POST() {
 
     let playersLoaded = 0;
     if (playersToSave.length > 0) {
-        console.log(`Found ${playersToSave.length} players. Upserting into DB...`);
+        // Deduplicate players by name
+        const uniquePlayersMap = new Map();
+        for (const p of playersToSave) {
+            uniquePlayersMap.set(p.name.toLowerCase().trim(), p);
+        }
+        const uniquePlayersToSave = Array.from(uniquePlayersMap.values());
+
+        console.log(`Found ${uniquePlayersToSave.length} unique players. Upserting into DB...`);
         const existingPlayers = await prisma.player.findMany();
         const existingMap = new Map();
         for (const p of existingPlayers) {
             existingMap.set(p.name.toLowerCase().trim(), p.id);
         }
 
-        for (const p of playersToSave) {
+        for (const p of uniquePlayersToSave) {
             const lowerName = p.name.toLowerCase().trim();
             const id = existingMap.get(lowerName);
             if (id) {
@@ -152,7 +159,7 @@ export async function POST() {
                     }
                 });
             } else {
-                await prisma.player.create({
+                const newPlayer = await prisma.player.create({
                     data: {
                         name: p.name,
                         team: p.team,
@@ -169,9 +176,11 @@ export async function POST() {
                         isSetPieceSpecialist: p.setPieceSpecialist
                     }
                 });
+                // Add the newly created player to existingMap so subsequent identical names are ignored or updated
+                existingMap.set(lowerName, newPlayer.id);
             }
         }
-        playersLoaded = playersToSave.length;
+        playersLoaded = uniquePlayersToSave.length;
     }
 
     // Scrape fixtures
