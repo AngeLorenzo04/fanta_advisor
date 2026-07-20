@@ -953,7 +953,10 @@
                     <h1 class="brand-name">Fanta-Advisor</h1>
                 </div>
             </div>
-            <div class="status-section">
+            <div class="status-section" style="display: flex; align-items: center;">
+                <button class="btn-secondary" id="btn-trigger-scraper" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-right: 1rem; border-color: var(--border-color); background: rgba(59, 130, 246, 0.1); color: var(--accent-solid); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                    🔄 Sincronizza Scraper
+                </button>
                 <div id="connection-status" class="status-badge">
                     <span id="connection-dot" class="status-dot"></span>
                     <span id="connection-text">Verifica connessione...</span>
@@ -1192,7 +1195,8 @@
             teamRemainingBudgetInput: document.getElementById('team-remaining-budget-input'),
             btnSubmitTeam: document.getElementById('btn-submit-team'),
             btnCancelEdit: document.getElementById('btn-cancel-edit'),
-            teamsTableBody: document.getElementById('teams-table-body')
+            teamsTableBody: document.getElementById('teams-table-body'),
+            btnTriggerScraper: document.getElementById('btn-trigger-scraper')
         };
 
         // --- MOCK DATABASE FOR OFFLINE SIMULATION ---
@@ -1281,8 +1285,14 @@
 
         async function fetchData() {
             if (isSimulationMode) {
-                // Use local mock database
-                if (state.players.length === 0) {
+                // Use local mock database or localStorage if available
+                const savedSim = localStorage.getItem('fanta_advisor_sim_state');
+                if (savedSim) {
+                    const parsed = JSON.parse(savedSim);
+                    state.players = parsed.players || [];
+                    state.participants = parsed.participants || [];
+                    state.purchases = parsed.purchases || [];
+                } else if (state.players.length === 0) {
                     state.players = JSON.parse(JSON.stringify(mockData.players));
                     state.participants = JSON.parse(JSON.stringify(mockData.participants));
                     state.purchases = [];
@@ -1366,6 +1376,7 @@
                 
                 toast(`Acquisto registrato: ${player.name} a ${participant.name} per ${price} crediti!`, "success");
                 render();
+                saveSimulationState();
                 return;
             }
 
@@ -1728,6 +1739,7 @@
                         resetTeamForm();
                         renderTeamsModal();
                         render();
+                        saveSimulationState();
                     }
                 } else {
                     try {
@@ -1768,6 +1780,7 @@
                     resetTeamForm();
                     renderTeamsModal();
                     render();
+                    saveSimulationState();
                 } else {
                     try {
                         const res = await fetch(`${API_URL}/teams`, {
@@ -1806,6 +1819,7 @@
                 toast("Squadra eliminata localmente!", "success");
                 renderTeamsModal();
                 render();
+                saveSimulationState();
             } else {
                 try {
                     const res = await fetch(`${API_URL}/teams/${id}`, {
@@ -1824,6 +1838,44 @@
                 }
             }
         }
+
+        function saveSimulationState() {
+            if (isSimulationMode) {
+                localStorage.setItem('fanta_advisor_sim_state', JSON.stringify({
+                    players: state.players,
+                    participants: state.participants,
+                    purchases: state.purchases
+                }));
+            }
+        }
+
+        elements.btnTriggerScraper.addEventListener('click', async () => {
+            if (isSimulationMode) {
+                toast("Impossibile sincronizzare lo scraper in modalità offline!", "warning");
+                return;
+            }
+            
+            elements.btnTriggerScraper.textContent = "⏳ Sincronizzazione...";
+            elements.btnTriggerScraper.disabled = true;
+            
+            try {
+                const res = await fetch('http://localhost:8082/api/v1/scraper/trigger', {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    toast(`Scraping completato! Calciatori caricati: ${data.players_loaded}`, "success");
+                    await fetchData();
+                } else {
+                    toast("Errore durante lo scraping!", "error");
+                }
+            } catch (e) {
+                toast("Impossibile connettersi al servizio Scraper (porta 8082)", "error");
+            } finally {
+                elements.btnTriggerScraper.textContent = "🔄 Sincronizza Scraper";
+                elements.btnTriggerScraper.disabled = false;
+            }
+        });
 
         // --- INITIALIZATION ---
         async function init() {
