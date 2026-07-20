@@ -55,6 +55,15 @@
                 radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
         }
 
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         h1, h2, h3, h4, .brand-font {
             font-family: 'Outfit', sans-serif;
         }
@@ -152,11 +161,11 @@
         .workspace-grid {
             display: grid;
             grid-template-columns: 320px 1fr 340px;
-            gap: 1.5rem;
+            gap: 2rem;
             width: 100%;
         }
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1150px) {
             .workspace-grid {
                 grid-template-columns: 1fr;
             }
@@ -166,13 +175,19 @@
         .panel {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: var(--card-shadow);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .panel-header {
@@ -255,14 +270,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
+            padding: 0.85rem 1.25rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: transparent;
         }
 
         .player-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(4px);
         }
 
         .player-item.selected {
@@ -499,65 +516,50 @@
             color: var(--text-secondary);
         }
 
-        select, input[type="number"] {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
+        select, input[type="number"], input[type="text"] {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             outline: none;
             width: 100%;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        select:focus, input[type="number"]:focus {
+        select:focus, input[type="number"]:focus, input[type="text"]:focus {
             border-color: var(--accent-solid);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
         }
 
-        .btn-purchase {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .btn-purchase, .btn-primary {
+            background: var(--accent-solid);
             border: none;
             color: white;
-            padding: 0.85rem 1.25rem;
+            padding: 0.85rem 1.5rem;
             border-radius: 12px;
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
         }
 
-        .btn-purchase:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        .btn-purchase:hover, .btn-primary:hover {
+            background: #4f46e5;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
 
-        .btn-purchase:active {
+        .btn-purchase:active, .btn-primary:active {
             transform: translateY(0) scale(0.98);
         }
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-            grid-column: span 2;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-purchase:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
-        }
-
-        .btn-purchase:active {
-            transform: translateY(0);
-        }
-
         /* Log / Recent activity Panel */
         .recent-purchases-card {
             flex-grow: 1;
@@ -1119,18 +1121,18 @@
 
         /* Pitch Layout Styles */
         .pitch-container {
-            background: linear-gradient(0deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 12px;
+            background: linear-gradient(180deg, #064e3b 0%, #065f46 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 20px;
             position: relative;
             width: 100%;
-            height: 480px;
+            height: 520px;
             display: flex;
             flex-direction: column-reverse; /* GK at bottom */
             justify-content: space-around;
-            padding: 1rem 0;
+            padding: 1.5rem 0;
             overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
         }
 
         .pitch-container::before {
@@ -1139,8 +1141,8 @@
             top: 50%;
             left: 0;
             width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.4);
+            height: 1px;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .pitch-container::after {
@@ -1149,16 +1151,16 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 120px;
-            height: 120px;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            width: 140px;
+            height: 140px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 50%;
         }
 
         .pitch-row {
             display: flex;
             justify-content: center;
-            gap: 1.5rem;
+            gap: 2rem;
             z-index: 1;
             width: 100%;
         }
@@ -1168,54 +1170,69 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            width: 80px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 85px;
             text-align: center;
+            position: relative;
         }
 
         .player-node:hover {
-            transform: scale(1.15);
+            transform: translateY(-6px) scale(1.05);
             z-index: 10;
         }
 
         .jersey-icon {
-            width: 50px;
-            height: 50px;
-            margin-bottom: 4px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+            width: 55px;
+            height: 55px;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.5));
+            transition: all 0.3s ease;
         }
 
-        .player-name-plate {
-            background: rgba(20, 20, 30, 0.8);
+        .player-name-pitch {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             color: white;
             font-size: 0.7rem;
             font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 2px 8px;
+            border-radius: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .player-score-plate {
-            background: var(--accent-solid);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-top: -6px; /* Overlap with jersey/name slightly */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: -8px;
             z-index: 2;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
+        .player-stats-pitch {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: 4px;
+            background: rgba(20, 20, 30, 0.8);
+            padding: 3px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+        }
+
+        .player-score-pitch {
+            font-size: 0.75rem;
+            color: var(--accent-success);
+            font-weight: 700;
+        }
+
+        .player-value-pitch {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 0.4rem;
+        }
         /* Evaluation Workspace Styles */
         .evaluation-grid {
             display: flex;
@@ -1373,9 +1390,10 @@
         <div id="draft-workspace" class="workspace-grid">
             
             <!-- Left Panel: Players List -->
-        <section class="panel">
-            <div class="panel-header">
-                <h3 class="panel-title">Lista Calciatori</h3>
+             <div class="panel animate-in" style="animation-delay: 0.1s;">
+                <div class="panel-header">
+                    <h3 class="panel-title">Lista Calciatori</h3>
+                </div>
                 <span id="players-count" style="font-size: 0.8rem; color: var(--text-secondary);">0 / 0</span>
             </div>
             
@@ -1470,7 +1488,7 @@
             </section>
             
             <!-- Recent Purchases -->
-            <section class="panel recent-purchases-card">
+            <section class="panel recent-purchases-card animate-in" style="animation-delay: 0.2s;">
                 <div class="panel-header">
                     <h3 class="panel-title">Ultimi Acquisti Asta</h3>
                 </div>
@@ -1482,7 +1500,7 @@
         </div>
 
         <!-- Right Panel: Rosters & Budget Summary -->
-        <section class="panel">
+        <section class="panel animate-in" style="animation-delay: 0.3s;">
             <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="panel-title">Partecipanti Asta</h3>
                 <button class="btn-secondary" id="btn-manage-teams" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 6px; margin: 0;">Gestisci</button>
@@ -1501,7 +1519,7 @@
 
         <div id="lineup-workspace" class="evaluation-grid" style="display: none;">
             <!-- Selector for Mister -->
-            <div class="panel" style="margin-bottom: 1rem;">
+            <div class="panel animate-in" style="margin-bottom: 1rem; animation-delay: 0.1s;">
                 <div class="panel-header">
                     <h3 class="panel-title">Seleziona Mister per la Formazione</h3>
                 </div>
@@ -1512,7 +1530,7 @@
             
             <div id="lineup-content" style="display: flex; gap: 2rem; width: 100%;">
                 <!-- Titolari -->
-                <div class="panel" style="flex: 2;">
+                <div class="panel animate-in" style="flex: 2; animation-delay: 0.2s;">
                     <div class="panel-header" style="justify-content: space-between;">
                         <h3 class="panel-title" style="display:flex; align-items:center;">Titolari 
                             <select id="lineup-formation-select" style="font-size: 0.8rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-left: 0.5rem; padding: 0.2rem 0.5rem; cursor: pointer;">
@@ -1534,7 +1552,7 @@
                 </div>
 
                 <!-- Panchina -->
-                <div class="panel" style="flex: 1;">
+                <div class="panel animate-in" style="flex: 1; animation-delay: 0.3s;">
                     <div class="panel-header">
                         <h3 class="panel-title">Panchina</h3>
                     </div>
@@ -3136,8 +3154,10 @@
                     node.innerHTML = `
                         ${getJerseySvg(roleColor)}
                         <div class="player-name-pitch">${dto.player.name}</div>
-                        <div class="player-score-pitch" style="font-size: 0.75rem; color: #10b981; font-weight: bold; margin-top: 2px;">Voto: ${dto.expectedMatchScore.toFixed(2)}</div>
-                        <div class="player-value-pitch" style="font-size: 0.7rem; color: var(--text-secondary);">Valore: ${dto.player.currentQuote || dto.player.initialQuote || 1}</div>
+                        <div class="player-stats-pitch">
+                            <span class="player-score-pitch">${dto.expectedMatchScore.toFixed(2)}</span>
+                            <span class="player-value-pitch">${dto.player.currentQuote || dto.player.initialQuote || 1}</span>
+                        </div>
                     `;
 
                     if (currentSelectedStarter === dto.player.id) {
