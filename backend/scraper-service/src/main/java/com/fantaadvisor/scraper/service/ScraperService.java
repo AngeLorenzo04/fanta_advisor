@@ -454,12 +454,12 @@ public class ScraperService {
             Document doc = Jsoup.parse(html);
             browser.close();
 
-            Elements matchBlocks = doc.select(".match-block"); // Ipotesi selettore generico
+            Elements matchBlocks = doc.select("li.match");
             if (!matchBlocks.isEmpty()) {
                 for (Element block : matchBlocks) {
                     try {
-                        String home = block.select(".team-home").text().trim();
-                        String away = block.select(".team-away").text().trim();
+                        String home = block.select(".team-home meta[itemprop=name]").attr("content").trim();
+                        String away = block.select(".team-away meta[itemprop=name]").attr("content").trim();
                         if (!home.isEmpty() && !away.isEmpty()) {
                             home = mapTeamAbbreviation(home);
                             away = mapTeamAbbreviation(away);

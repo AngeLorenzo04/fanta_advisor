@@ -3028,6 +3028,9 @@
             });
         }
 
+        // State for manual substitutions
+        let currentSelectedStarter = null;
+
         function renderLineup(lineupData, participantId) {
             if (!lineupData || !lineupData.starting11) return;
             elements.lineupScore.textContent = (lineupData.totalProjectedScore || 0).toFixed(2);
@@ -3081,8 +3084,21 @@
                         </div>
                     `;
 
+                    if (currentSelectedStarter === dto.player.id) {
+                        node.style.border = '2px dashed white';
+                        node.style.borderRadius = '8px';
+                    }
+
                     node.addEventListener('click', () => {
-                        toast("Seleziona un panchinaro per sostituire questo titolare", "info");
+                        document.querySelectorAll('.player-node').forEach(n => n.style.border = 'none');
+                        if (currentSelectedStarter === dto.player.id) {
+                            currentSelectedStarter = null;
+                        } else {
+                            currentSelectedStarter = dto.player.id;
+                            node.style.border = '2px dashed white';
+                            node.style.borderRadius = '8px';
+                            toast(`Selezionato ${dto.player.name}. Clicca un panchinaro per sostituirlo.`, "info");
+                        }
                     });
 
                     row.appendChild(node);
@@ -3124,11 +3140,19 @@
                 // Swap logic on click
                 div.addEventListener('click', async () => {
                     const starters = lineupData.starting11.map(p => p.player.id);
-                    // Find a starter with same role to swap (simplistic MVP swap)
-                    const targetRole = dto.player.role;
-                    const starterIdx = lineupData.starting11.findIndex(p => p.player.role === targetRole);
+                    let starterIdx = -1;
+                    
+                    if (currentSelectedStarter) {
+                        starterIdx = starters.indexOf(currentSelectedStarter);
+                    } else {
+                        // Fallback auto-swap same role if no starter selected
+                        const targetRole = dto.player.role;
+                        starterIdx = starters.findIndex(id => lineupData.starting11.find(s => s.player.id === id).player.role === targetRole);
+                    }
+
                     if (starterIdx >= 0) {
                         starters[starterIdx] = dto.player.id; // Swap
+                        currentSelectedStarter = null; // reset selection
                         try {
                             const reqBody = { startingPlayerIds: starters };
                             const res = await fetch(`${API_URL}/lineups/${participantId}/evaluate`, {
@@ -3139,13 +3163,13 @@
                             if (res.ok) {
                                 const newData = await res.json();
                                 renderLineup(newData, participantId);
-                                toast(`Sostituzione effettuata: ${dto.player.name}`, "success");
+                                toast(`Sostituzione effettuata: ${dto.player.name} entra in campo.`, "success");
                             }
                         } catch (e) {
                             toast("Errore durante la sostituzione", "error");
                         }
                     } else {
-                        toast("Nessun titolare dello stesso ruolo da sostituire", "warning");
+                        toast("Seleziona prima un titolare da sostituire cliccando la sua maglia sul campo.", "warning");
                     }
                 });
 
