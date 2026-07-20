@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+  id                           Int       @id @default(autoincrement())
+  name                         String
+  team                         String
+  role                         String
+  initialQuote                 Int?      @map("initial_quote")
+  currentQuote                 Int?      @map("current_quote")
+  expectedValue                Float?    @map("expected_value")
+  expectedBaseRating           Float?    @map("expected_base_rating")
+  oopIndex                     Float?    @map("oop_index")
+  isOop                        Boolean?  @map("is_oop")
+  penaltyTakerPercentage       Float?    @map("penalty_taker_percentage")
+  freeKickSpecialistPercentage Float?    @map("free_kick_specialist_percentage")
+  cornerSpecialistPercentage   Float?    @map("corner_specialist_percentage")
+  isSetPieceSpecialist         Boolean?  @map("is_set_piece_specialist")
+  Purchase                     Purchase?
+
+  @@map("players")
+}
+
+model AuctionParticipant {
+  id              Int        @id @default(autoincrement())
+  name            String     @unique
+  initialBudget   Int        @map("initial_budget")
+  remainingBudget Int        @map("remaining_budget")
+  purchases       Purchase[]
+
+  @@map("auction_participants")
+}
+
+model Purchase {
+  id            Int                @id @default(autoincrement())
+  price         Int
+  playerId      Int                @unique @map("player_id")
+  participantId Int                @map("participant_id")
+  player        Player             @relation(fields: [playerId], references: [id])
+  participant   AuctionParticipant @relation(fields: [participantId], references: [id])
+
+  @@map("purchases")
+}
