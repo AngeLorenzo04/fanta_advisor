@@ -31,4 +31,16 @@ public class ScraperController {
             ));
         }
     }
+
+    @GetMapping("/fixtures")
+    public ResponseEntity<?> getFixtures() {
+        try {
+            return ResponseEntity.ok(scraperService.scrapeNextMatchdayFixtures());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "status", "ERROR",
+                    "message", "Errore durante lo scraping delle probabili formazioni: " + e.getMessage()
+            ));
+        }
+    }
 }

@@ -1254,7 +1254,8 @@
             <div class="nav-tabs" style="display: flex; gap: 0.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0.25rem; border-radius: 12px; margin-left: 2rem;">
                 <button class="tab-btn active" id="tab-draft">📊 Draft Asta</button>
                 <button class="tab-btn" id="tab-rosters">🛡️ Rose Squadre</button>
-                <button class="tab-btn" id="tab-evaluation">📈 Valutazione Squadre</button>
+                <button class="tab-btn" id="tab-evaluation">📈 Valutazione</button>
+                <button class="tab-btn" id="tab-lineup">⚽ Formazione</button>
             </div>
             <div class="status-section" style="display: flex; align-items: center; margin-left: auto;">
                 <button class="btn-secondary" id="btn-trigger-scraper" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-right: 1rem; border-color: var(--border-color); background: rgba(59, 130, 246, 0.1); color: var(--accent-solid); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
@@ -1397,6 +1398,41 @@
         </div>
         <div id="evaluation-workspace" class="evaluation-grid" style="display: none;">
             <!-- Javascript populated -->
+        </div>
+
+        <div id="lineup-workspace" class="evaluation-grid" style="display: none;">
+            <!-- Selector for Mister -->
+            <div class="panel" style="margin-bottom: 1rem;">
+                <div class="panel-header">
+                    <h3 class="panel-title">Seleziona Mister per la Formazione</h3>
+                </div>
+                <select id="lineup-team-select" style="width: 100%; padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 1rem;">
+                    <option value="">-- Seleziona una squadra --</option>
+                </select>
+            </div>
+            
+            <div id="lineup-content" style="display: flex; gap: 2rem; width: 100%;">
+                <!-- Titolari -->
+                <div class="panel" style="flex: 2;">
+                    <div class="panel-header" style="justify-content: space-between;">
+                        <h3 class="panel-title">Titolari <span id="lineup-formation-badge" style="font-size: 0.8rem; background: var(--accent-solid); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;">Modulo</span></h3>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent-success);">Score: <span id="lineup-score">0.0</span></div>
+                    </div>
+                    <div id="lineup-starters" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+
+                <!-- Panchina -->
+                <div class="panel" style="flex: 1;">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Panchina</h3>
+                    </div>
+                    <div id="lineup-bench" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -1556,7 +1592,14 @@
             btnSubmitTeam: document.getElementById('btn-submit-team'),
             btnCancelEdit: document.getElementById('btn-cancel-edit'),
             teamsTableBody: document.getElementById('teams-table-body'),
-            btnTriggerScraper: document.getElementById('btn-trigger-scraper')
+            btnTriggerScraper: document.getElementById('btn-trigger-scraper'),
+            tabLineup: document.getElementById('tab-lineup'),
+            lineupWorkspace: document.getElementById('lineup-workspace'),
+            lineupTeamSelect: document.getElementById('lineup-team-select'),
+            lineupStarters: document.getElementById('lineup-starters'),
+            lineupBench: document.getElementById('lineup-bench'),
+            lineupScore: document.getElementById('lineup-score'),
+            lineupFormationBadge: document.getElementById('lineup-formation-badge')
         };
 
         // --- MOCK DATABASE FOR OFFLINE SIMULATION ---
@@ -2441,18 +2484,22 @@
             elements.tabDraft.classList.add('active');
             elements.tabRosters.classList.remove('active');
             elements.tabEvaluation.classList.remove('active');
+            if (elements.tabLineup) elements.tabLineup.classList.remove('active');
             elements.draftWorkspace.style.display = 'grid';
             elements.rostersWorkspace.style.display = 'none';
             elements.evaluationWorkspace.style.display = 'none';
+            if (elements.lineupWorkspace) elements.lineupWorkspace.style.display = 'none';
         });
 
         elements.tabRosters.addEventListener('click', () => {
             elements.tabRosters.classList.add('active');
             elements.tabDraft.classList.remove('active');
             elements.tabEvaluation.classList.remove('active');
+            if (elements.tabLineup) elements.tabLineup.classList.remove('active');
             elements.draftWorkspace.style.display = 'none';
             elements.rostersWorkspace.style.display = 'grid';
             elements.evaluationWorkspace.style.display = 'none';
+            if (elements.lineupWorkspace) elements.lineupWorkspace.style.display = 'none';
             renderRosters();
         });
 
@@ -2460,11 +2507,28 @@
             elements.tabEvaluation.classList.add('active');
             elements.tabDraft.classList.remove('active');
             elements.tabRosters.classList.remove('active');
+            if (elements.tabLineup) elements.tabLineup.classList.remove('active');
             elements.draftWorkspace.style.display = 'none';
             elements.rostersWorkspace.style.display = 'none';
+            if (elements.lineupWorkspace) elements.lineupWorkspace.style.display = 'none';
             elements.evaluationWorkspace.style.display = 'flex';
             renderEvaluation();
         });
+
+        if (elements.tabLineup) {
+            elements.tabLineup.addEventListener('click', () => {
+                elements.tabLineup.classList.add('active');
+                elements.tabDraft.classList.remove('active');
+                elements.tabRosters.classList.remove('active');
+                elements.tabEvaluation.classList.remove('active');
+                elements.draftWorkspace.style.display = 'none';
+                elements.rostersWorkspace.style.display = 'none';
+                elements.evaluationWorkspace.style.display = 'none';
+                elements.lineupWorkspace.style.display = 'flex';
+                populateLineupTeams();
+            });
+        }
+
 
         function renderRosters() {
             elements.rostersWorkspace.innerHTML = '';
@@ -2824,6 +2888,128 @@
         }
 
         window.addEventListener('DOMContentLoaded', init);
+        // --- LINEUP OPTIMIZER LOGIC ---
+        function populateLineupTeams() {
+            if (!elements.lineupTeamSelect) return;
+            const currentVal = elements.lineupTeamSelect.value;
+            elements.lineupTeamSelect.innerHTML = '<option value="">-- Seleziona una squadra --</option>';
+            state.participants.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                elements.lineupTeamSelect.appendChild(opt);
+            });
+            if (currentVal && state.participants.find(p => p.id == currentVal)) {
+                elements.lineupTeamSelect.value = currentVal;
+            }
+        }
+
+        if (elements.lineupTeamSelect) {
+            elements.lineupTeamSelect.addEventListener('change', async (e) => {
+                const participantId = e.target.value;
+                if (!participantId) {
+                    elements.lineupStarters.innerHTML = '';
+                    elements.lineupBench.innerHTML = '';
+                    elements.lineupScore.textContent = '0.0';
+                    elements.lineupFormationBadge.textContent = 'Modulo';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}/lineups/${participantId}/optimal`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        renderLineup(data, participantId);
+                    } else {
+                        toast("Errore nel caricamento della formazione", "error");
+                    }
+                } catch (e) {
+                    toast("Errore di connessione al server", "error");
+                }
+            });
+        }
+
+        function renderLineup(lineupData, participantId) {
+            if (!lineupData || !lineupData.starting11) return;
+            elements.lineupScore.textContent = (lineupData.totalProjectedScore || 0).toFixed(2);
+            elements.lineupFormationBadge.textContent = lineupData.formation || 'Modulo';
+            
+            elements.lineupStarters.innerHTML = '';
+            elements.lineupBench.innerHTML = '';
+
+            const renderPlayer = (dto, isStarter) => {
+                const div = document.createElement('div');
+                div.className = 'roster-player-item';
+                div.style.cursor = 'pointer';
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.alignItems = 'center';
+                div.style.padding = '0.5rem';
+                
+                const roleColor = dto.player.role === 'P' ? '#f59e0b' : 
+                                 dto.player.role === 'D' ? '#3b82f6' : 
+                                 dto.player.role === 'C' ? '#10b981' : '#ef4444';
+                
+                let modText = dto.matchModifier > 0 ? `+${dto.matchModifier.toFixed(1)}` : dto.matchModifier.toFixed(1);
+                let modColor = dto.matchModifier > 0 ? 'var(--accent-success)' : dto.matchModifier < 0 ? 'var(--accent-error)' : 'var(--text-secondary)';
+
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="background: ${roleColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">${dto.player.role}</span>
+                        <span style="font-weight: 600;">${dto.player.name}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">vs ${dto.opponentTeam}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="font-size: 0.8rem; color: ${modColor};" title="Modificatore Difficoltà">${modText}</span>
+                        <span style="font-weight: bold; color: var(--accent-solid);">${dto.expectedMatchScore.toFixed(2)}</span>
+                    </div>
+                `;
+
+                // Swap logic on click
+                div.addEventListener('click', async () => {
+                    const starters = lineupData.starting11.map(p => p.player.id);
+                    if (isStarter) {
+                        // Remove from starters if click (needs replacement)
+                        toast("Seleziona un panchinaro per sostituirlo", "info");
+                    } else {
+                        // Find a starter with same role to swap (simplistic MVP swap)
+                        const targetRole = dto.player.role;
+                        const starterIdx = lineupData.starting11.findIndex(p => p.player.role === targetRole);
+                        if (starterIdx >= 0) {
+                            starters[starterIdx] = dto.player.id; // Swap
+                            try {
+                                const reqBody = { startingPlayerIds: starters };
+                                const res = await fetch(`${API_URL}/lineups/${participantId}/evaluate`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(reqBody)
+                                });
+                                if (res.ok) {
+                                    const newData = await res.json();
+                                    renderLineup(newData, participantId);
+                                    toast(`Sostituzione effettuata: ${dto.player.name}`, "success");
+                                }
+                            } catch (e) {
+                                toast("Errore durante la sostituzione", "error");
+                            }
+                        } else {
+                            toast("Nessun titolare dello stesso ruolo da sostituire", "warning");
+                        }
+                    }
+                });
+
+                return div;
+            };
+
+            lineupData.starting11.forEach(p => {
+                elements.lineupStarters.appendChild(renderPlayer(p, true));
+            });
+
+            lineupData.bench.forEach(p => {
+                elements.lineupBench.appendChild(renderPlayer(p, false));
+            });
+        }
+
     </script>
 </body>
 </html>
