@@ -1514,7 +1514,18 @@
                 <!-- Titolari -->
                 <div class="panel" style="flex: 2;">
                     <div class="panel-header" style="justify-content: space-between;">
-                        <h3 class="panel-title">Titolari <span id="lineup-formation-badge" style="font-size: 0.8rem; background: var(--accent-solid); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;">Modulo</span></h3>
+                        <h3 class="panel-title" style="display:flex; align-items:center;">Titolari 
+                            <select id="lineup-formation-select" style="font-size: 0.8rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; margin-left: 0.5rem; padding: 0.2rem 0.5rem; cursor: pointer;">
+                                <option value="">Migliore Assoluto</option>
+                                <option value="3-4-3">3-4-3</option>
+                                <option value="4-3-3">4-3-3</option>
+                                <option value="3-5-2">3-5-2</option>
+                                <option value="4-4-2">4-4-2</option>
+                                <option value="5-3-2">5-3-2</option>
+                                <option value="4-5-1">4-5-1</option>
+                                <option value="5-4-1">5-4-1</option>
+                            </select>
+                        </h3>
                         <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent-success);">Score: <span id="lineup-score">0.0</span></div>
                     </div>
                     <div id="lineup-starters" style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -1698,7 +1709,7 @@
             lineupStarters: document.getElementById('lineup-starters'),
             lineupBench: document.getElementById('lineup-bench'),
             lineupScore: document.getElementById('lineup-score'),
-            lineupFormationBadge: document.getElementById('lineup-formation-badge')
+            lineupFormationSelect: document.getElementById('lineup-formation-select')
         };
 
         // --- MOCK DATABASE FOR OFFLINE SIMULATION ---
@@ -3016,38 +3027,55 @@
                 opt.textContent = p.name;
                 elements.lineupTeamSelect.appendChild(opt);
             });
-            if (currentVal && state.participants.find(p => p.id == currentVal)) {
+            if (elements.lineupTeamSelect) {
                 elements.lineupTeamSelect.value = currentVal;
+            }
+        }
+
+        async function fetchAndRenderLineup(participantId, formation = "") {
+            if (!participantId) {
+                elements.lineupStarters.innerHTML = '';
+                elements.lineupBench.innerHTML = '';
+                elements.lineupScore.textContent = '0.0';
+                elements.lineupFormationSelect.value = '';
+                return;
+            }
+
+            // Avvia la sincronizzazione in automatico
+            if (elements.btnTriggerScraper) {
+                elements.btnTriggerScraper.click();
+            }
+
+            try {
+                let url = `${API_URL}/lineups/${participantId}/optimal`;
+                if (formation) {
+                    url += `?formation=${formation}`;
+                }
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    renderLineup(data, participantId);
+                } else {
+                    toast("Errore nel caricamento della formazione", "error");
+                }
+            } catch (e) {
+                toast("Errore di connessione al server", "error");
             }
         }
 
         if (elements.lineupTeamSelect) {
             elements.lineupTeamSelect.addEventListener('change', async (e) => {
                 const participantId = e.target.value;
-                if (!participantId) {
-                    elements.lineupStarters.innerHTML = '';
-                    elements.lineupBench.innerHTML = '';
-                    elements.lineupScore.textContent = '0.0';
-                    elements.lineupFormationBadge.textContent = 'Modulo';
-                    return;
-                }
+                const formation = elements.lineupFormationSelect.value;
+                fetchAndRenderLineup(participantId, formation);
+            });
+        }
 
-                // Avvia la sincronizzazione in automatico
-                if (elements.btnTriggerScraper) {
-                    elements.btnTriggerScraper.click();
-                }
-
-                try {
-                    const res = await fetch(`${API_URL}/lineups/${participantId}/optimal`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        renderLineup(data, participantId);
-                    } else {
-                        toast("Errore nel caricamento della formazione", "error");
-                    }
-                } catch (e) {
-                    toast("Errore di connessione al server", "error");
-                }
+        if (elements.lineupFormationSelect) {
+            elements.lineupFormationSelect.addEventListener('change', async (e) => {
+                const participantId = elements.lineupTeamSelect.value;
+                const formation = e.target.value;
+                fetchAndRenderLineup(participantId, formation);
             });
         }
 
@@ -3057,8 +3085,18 @@
         function renderLineup(lineupData, participantId) {
             if (!lineupData || !lineupData.starting11) return;
             elements.lineupScore.textContent = (lineupData.totalProjectedScore || 0).toFixed(2);
-            elements.lineupFormationBadge.textContent = lineupData.formation || 'Modulo';
             
+            // Update the select to reflect the returned formation (only if the server determined it automatically)
+            if (lineupData.formation && !elements.lineupFormationSelect.value) {
+                // Find option or add it temporarily if not exists
+                const optionExists = Array.from(elements.lineupFormationSelect.options).some(opt => opt.value === lineupData.formation);
+                if(optionExists) {
+                    elements.lineupFormationSelect.value = lineupData.formation;
+                } else {
+                    elements.lineupFormationSelect.value = "";
+                }
+            }
+                
             elements.lineupStarters.innerHTML = '';
             elements.lineupBench.innerHTML = '';
 
@@ -3092,19 +3130,14 @@
                                       role === 'D' ? '#3b82f6' : 
                                       role === 'C' ? '#10b981' : '#ef4444';
                     
-                    let modText = dto.matchModifier > 0 ? `+${dto.matchModifier.toFixed(1)}` : dto.matchModifier.toFixed(1);
-                    let modColor = dto.matchModifier > 0 ? 'var(--accent-success)' : dto.matchModifier < 0 ? 'var(--accent-error)' : '#aaa';
-
                     const node = document.createElement('div');
                     node.className = 'player-node';
-                    node.title = `${dto.player.name} vs ${dto.opponentTeam} (Modificatore: ${modText})`;
+                    node.title = `${dto.player.name} vs ${dto.opponentTeam}`;
                     node.innerHTML = `
                         ${getJerseySvg(roleColor)}
-                        <div class="player-name-plate">${dto.player.name}</div>
-                        <div class="player-score-plate">
-                            <span style="font-size:0.6rem; color:${modColor};">${modText}</span>
-                            <span>${dto.expectedMatchScore.toFixed(2)}</span>
-                        </div>
+                        <div class="player-name-pitch">${dto.player.name}</div>
+                        <div class="player-score-pitch" style="font-size: 0.75rem; color: #10b981; font-weight: bold; margin-top: 2px;">Voto: ${dto.expectedMatchScore.toFixed(2)}</div>
+                        <div class="player-value-pitch" style="font-size: 0.7rem; color: var(--text-secondary);">Valore: ${dto.player.currentQuote || dto.player.initialQuote || 1}</div>
                     `;
 
                     if (currentSelectedStarter === dto.player.id) {

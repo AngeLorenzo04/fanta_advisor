@@ -57,9 +57,13 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
 
     let evaluatedPlayers = purchases.map(p => evaluatePlayerForMatchday(p.player, fixtures));
     evaluatedPlayers.sort((a, b) => b.expectedMatchScore - a.expectedMatchScore);
+    const url = new URL(request.url);
+    const requestedFormation = url.searchParams.get('formation');
 
-    const formations = ["3-4-3", "4-3-3", "3-5-2", "4-4-2", "5-3-2", "4-5-1", "5-4-1"];
-
+    let formations = ["3-4-3", "4-3-3", "3-5-2", "4-4-2", "5-3-2", "4-5-1", "5-4-1"];
+    if (requestedFormation && formations.includes(requestedFormation)) {
+      formations = [requestedFormation];
+    }
     let bestLineup: any = null;
     let maxScore = -1000.0;
 
