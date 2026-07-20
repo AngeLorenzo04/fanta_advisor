@@ -71,6 +71,81 @@ public class DraftService {
         return purchase;
     }
 
+    @Transactional
+    public void deletePurchase(Long id) {
+        Purchase purchase = purchaseRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Acquisto non trovato"));
+
+        Player player = purchase.getPlayer();
+        AuctionParticipant participant = purchase.getParticipant();
+
+        // Restituisci crediti
+        participant.setRemainingBudget(participant.getRemainingBudget() + purchase.getPrice());
+        participantRepository.save(participant);
+
+        // Ripristina quotazione
+        player.setCurrentQuote(player.getInitialQuote());
+        playerRepository.save(player);
+
+        // Elimina transazione
+        purchaseRepository.delete(purchase);
+
+        // Invia notifica su Redis
+        try {
+            redisTemplate.convertAndSend("draft-events", "recalculate");
+        } catch (Exception e) {
+            System.err.println("Invio evento su Redis fallito: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public Purchase updatePurchase(Long id, Long newBuyerId, Integer newPrice) {
+        Purchase purchase = purchaseRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Acquisto non trovato"));
+
+        Player player = purchase.getPlayer();
+        AuctionParticipant oldParticipant = purchase.getParticipant();
+        AuctionParticipant newParticipant = participantRepository.findById(newBuyerId)
+                .orElseThrow(() -> new IllegalArgumentException("Nuovo partecipante non trovato"));
+
+        // Temporaneamente restituisci il vecchio prezzo al vecchio partecipante
+        oldParticipant.setRemainingBudget(oldParticipant.getRemainingBudget() + purchase.getPrice());
+
+        if (!oldParticipant.getId().equals(newParticipant.getId())) {
+            participantRepository.save(oldParticipant);
+            newParticipant = participantRepository.findById(newBuyerId).get();
+        } else {
+            newParticipant = oldParticipant;
+        }
+
+        // Verifica se il nuovo partecipante ha budget sufficiente
+        if (newParticipant.getRemainingBudget() < newPrice) {
+            throw new IllegalArgumentException("Crediti insufficienti per il nuovo acquirente");
+        }
+
+        // Applica il nuovo prezzo
+        newParticipant.setRemainingBudget(newParticipant.getRemainingBudget() - newPrice);
+        participantRepository.save(newParticipant);
+
+        // Aggiorna quotazione calciatore
+        player.setCurrentQuote(newPrice);
+        playerRepository.save(player);
+
+        // Aggiorna acquisto
+        purchase.setParticipant(newParticipant);
+        purchase.setPrice(newPrice);
+        purchaseRepository.save(purchase);
+
+        // Invia notifica su Redis
+        try {
+            redisTemplate.convertAndSend("draft-events", "recalculate");
+        } catch (Exception e) {
+            System.err.println("Invio evento su Redis fallito: " + e.getMessage());
+        }
+
+        return purchase;
+    }
+
     public Map<String, Object> getDraftState() {
         List<AuctionParticipant> participants = participantRepository.findAll();
         List<Purchase> purchases = purchaseRepository.findAll();

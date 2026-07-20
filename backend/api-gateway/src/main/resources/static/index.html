@@ -1144,6 +1144,38 @@
         </div>
     </div>
 
+    <!-- Modal for Purchase Editing -->
+    <div class="modal-overlay" id="purchase-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Modifica Acquisto Asta</h3>
+                <button class="modal-close" id="btn-close-purchase-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="purchase-edit-form" class="modal-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <input type="hidden" id="edit-purchase-id" value="">
+                    <div>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Giocatore:</span>
+                        <h4 id="edit-purchase-player-name" style="font-size: 1.1rem; color: var(--accent-solid); margin-top: 0.25rem;">Lautaro Martinez</h4>
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label for="edit-purchase-buyer-select">Acquirente (Manager)</label>
+                        <select id="edit-purchase-buyer-select" required>
+                            <!-- JS populated -->
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label for="edit-purchase-price-input">Prezzo Finale</label>
+                        <input type="number" id="edit-purchase-price-input" min="1" required>
+                    </div>
+                    <div class="form-actions" style="margin-top: 1rem;">
+                        <button type="submit" class="btn-primary" style="width: 100%;">Salva Modifiche</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Alert Container -->
     <div class="alert-container" id="alert-container"></div>
 
@@ -1184,6 +1216,13 @@
             activePlayerBaseRating: document.getElementById('active-player-base-rating'),
             activePlayerSuggestedBid: document.getElementById('active-player-suggested-bid'),
             buyerSelect: document.getElementById('buyer-select'),
+            purchaseModal: document.getElementById('purchase-modal'),
+            btnClosePurchaseModal: document.getElementById('btn-close-purchase-modal'),
+            purchaseEditForm: document.getElementById('purchase-edit-form'),
+            editPurchaseId: document.getElementById('edit-purchase-id'),
+            editPurchasePlayerName: document.getElementById('edit-purchase-player-name'),
+            editPurchaseBuyerSelect: document.getElementById('edit-purchase-buyer-select'),
+            editPurchasePriceInput: document.getElementById('edit-purchase-price-input'),
             bidPrice: document.getElementById('bid-price'),
             btnRegisterPurchase: document.getElementById('btn-register-purchase'),
             purchasesLog: document.getElementById('purchases-log-container'),
@@ -1625,7 +1664,13 @@
                             <strong>${p.participant.name}</strong>
                         </div>
                     </div>
-                    <span class="purchase-price">${p.price} FM</span>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span class="purchase-price">${p.price} FM</span>
+                        <div class="purchase-actions" style="display: flex; gap: 0.25rem;">
+                            <button class="btn-table-action" onclick="openEditPurchaseModal(${p.id})" title="Modifica acquisto" style="padding: 0.25rem; background: none; border: none; cursor: pointer; font-size: 0.9rem;">✏️</button>
+                            <button class="btn-table-action" onclick="deletePurchaseAction(${p.id})" title="Elimina acquisto" style="padding: 0.25rem; background: none; border: none; cursor: pointer; font-size: 0.9rem;">🗑️</button>
+                        </div>
+                    </div>
                 `;
                 elements.purchasesLog.appendChild(item);
             });
@@ -1906,6 +1951,158 @@
                 elements.btnTriggerScraper.disabled = false;
             }
         });
+
+        // --- PURCHASE CRUD FUNCTIONS ---
+        function openEditPurchaseModal(purchaseId) {
+            const purchase = state.purchases.find(p => p.id === purchaseId);
+            if (!purchase) {
+                toast("Acquisto non trovato", "error");
+                return;
+            }
+
+            elements.editPurchaseId.value = purchase.id;
+            elements.editPurchasePlayerName.textContent = purchase.player.name;
+            elements.editPurchasePriceInput.value = purchase.price;
+
+            // Populate buyer dropdown
+            elements.editPurchaseBuyerSelect.innerHTML = '<option value="">Seleziona manager...</option>';
+            state.participants.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                elements.editPurchaseBuyerSelect.appendChild(opt);
+            });
+            elements.editPurchaseBuyerSelect.value = purchase.participant.id;
+
+            elements.purchaseModal.style.display = 'flex';
+        }
+
+        function closePurchaseModal() {
+            elements.purchaseModal.style.display = 'none';
+        }
+
+        elements.btnClosePurchaseModal.addEventListener('click', closePurchaseModal);
+
+        elements.purchaseEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const purchaseId = parseInt(elements.editPurchaseId.value);
+            const newBuyerId = parseInt(elements.editPurchaseBuyerSelect.value);
+            const newPrice = parseInt(elements.editPurchasePriceInput.value);
+
+            if (isNaN(newPrice) || newPrice < 1) {
+                toast("Il prezzo deve essere almeno 1 credito!", "error");
+                return;
+            }
+
+            if (isSimulationMode) {
+                const purchase = state.purchases.find(p => p.id === purchaseId);
+                if (!purchase) return;
+
+                const oldParticipant = state.participants.find(m => m.id === purchase.participant.id);
+                const newParticipant = state.participants.find(m => m.id === newBuyerId);
+
+                if (!newParticipant) {
+                    toast("Nuovo acquirente non trovato", "error");
+                    return;
+                }
+
+                // Temporarily restore budget
+                oldParticipant.remainingBudget += purchase.price;
+
+                if (newParticipant.remainingBudget < newPrice) {
+                    // Revert old budget restore
+                    oldParticipant.remainingBudget -= purchase.price;
+                    toast(`Crediti insufficienti per ${newParticipant.name}! Massimo possibile: ${newParticipant.remainingBudget}`, "error");
+                    return;
+                }
+
+                // Apply new budget
+                newParticipant.remainingBudget -= newPrice;
+
+                // Update purchase
+                purchase.participant = newParticipant;
+                purchase.price = newPrice;
+
+                // Update player currentQuote
+                const player = state.players.find(p => p.id === purchase.player.id);
+                if (player) {
+                    player.currentQuote = newPrice;
+                }
+
+                toast("Acquisto aggiornato localmente!", "success");
+                closePurchaseModal();
+                render();
+                saveSimulationState();
+            } else {
+                try {
+                    const res = await fetch(`${API_URL}/draft/purchases/${purchaseId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ buyerParticipantId: newBuyerId, price: newPrice })
+                    });
+
+                    if (res.ok) {
+                        toast("Acquisto aggiornato con successo!", "success");
+                        closePurchaseModal();
+                        await fetchData();
+                    } else {
+                        const err = await res.json();
+                        toast(err.error || "Errore durante l'aggiornamento dell'acquisto", "error");
+                    }
+                } catch (err) {
+                    toast("Errore di connessione al server", "error");
+                }
+            }
+        });
+
+        async function deletePurchaseAction(purchaseId) {
+            if (!confirm("Sei sicuro di voler annullare questo acquisto?")) {
+                return;
+            }
+
+            if (isSimulationMode) {
+                const purchaseIndex = state.purchases.findIndex(p => p.id === purchaseId);
+                if (purchaseIndex === -1) return;
+
+                const purchase = state.purchases[purchaseIndex];
+                const participant = state.participants.find(m => m.id === purchase.participant.id);
+                const player = state.players.find(p => p.id === purchase.player.id);
+
+                if (participant) {
+                    participant.remainingBudget += purchase.price;
+                }
+
+                if (player) {
+                    player.isAvailable = true;
+                    player.currentQuote = player.initialQuote;
+                }
+
+                state.purchases.splice(purchaseIndex, 1);
+                toast("Acquisto annullato localmente!", "success");
+                render();
+                saveSimulationState();
+            } else {
+                try {
+                    const res = await fetch(`${API_URL}/draft/purchases/${purchaseId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        toast("Acquisto annullato con successo!", "success");
+                        await fetchData();
+                    } else {
+                        const err = await res.json();
+                        toast(err.error || "Errore durante l'annullamento", "error");
+                    }
+                } catch (err) {
+                    toast("Errore di connessione al server", "error");
+                }
+            }
+        }
+
+        // Expose globally for inline onclick
+        window.openEditPurchaseModal = openEditPurchaseModal;
+        window.deletePurchaseAction = deletePurchaseAction;
 
         // --- INITIALIZATION ---
         async function init() {
