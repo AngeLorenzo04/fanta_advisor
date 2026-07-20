@@ -29,6 +29,19 @@ export async function GET(request: Request) {
         });
         const dataCommands = await resCommands.json();
 
+        // Send activation message
+        if (process.env.TELEGRAM_GROUP_CHAT_ID) {
+            await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: process.env.TELEGRAM_GROUP_CHAT_ID,
+                    text: '🤖 *Fanta Advisor Bot Attivato!*\n\nIl bot è ora online e in ascolto per i comandi.',
+                    parse_mode: 'Markdown'
+                })
+            });
+        }
+
         return NextResponse.json({ webhook: dataWebhook, commands: dataCommands });
     } catch (e: any) {
         return NextResponse.json({ error: e.message }, { status: 500 });
