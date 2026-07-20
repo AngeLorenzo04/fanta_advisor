@@ -184,8 +184,8 @@ export async function POST() {
     }
 
     // Scrape fixtures
-    console.log("Navigating to probabili-formazioni-serie-a...");
-    await page.goto("https://www.fantacalcio.it/probabili-formazioni-serie-a", { waitUntil: 'networkidle', timeout: 30000 });
+    console.log("Navigating to serie-a/calendario per prendere le partite della 1° giornata...");
+    await page.goto("https://www.fantacalcio.it/serie-a/calendario", { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(2000);
     const contentFix = await page.content();
     const $fix = cheerio.load(contentFix);
@@ -206,11 +206,14 @@ export async function POST() {
         }
     });
 
-    if (fixtures.length > 0) {
-        console.log(`Found ${fixtures.length} fixtures. Clearing old and inserting new...`);
+    // Take only the first 10 fixtures (Matchday 1)
+    const currentFixtures = fixtures.slice(0, 10);
+
+    if (currentFixtures.length > 0) {
+        console.log(`Found ${currentFixtures.length} fixtures for matchday 1. Clearing old and inserting new...`);
         await prisma.matchFixture.deleteMany({});
         await prisma.matchFixture.createMany({
-            data: fixtures
+            data: currentFixtures
         });
     }
 
@@ -219,7 +222,7 @@ export async function POST() {
     return NextResponse.json({
         status: 'success',
         players_loaded: playersLoaded,
-        fixtures_loaded: fixtures.length,
+        fixtures_loaded: currentFixtures.length,
         source: 'playwright'
     });
   } catch (error: any) {
