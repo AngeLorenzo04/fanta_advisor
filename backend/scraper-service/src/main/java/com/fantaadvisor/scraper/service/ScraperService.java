@@ -3,10 +3,16 @@ package com.fantaadvisor.scraper.service;
 import com.fantaadvisor.shared.model.Player;
 import com.fantaadvisor.shared.model.Role;
 import com.fantaadvisor.shared.repository.PlayerRepository;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +25,195 @@ public class ScraperService {
 
     @Transactional
     public int scrapeAndLoadPlayers() {
-        // List of 45 Serie A players with base stats, set pieces and OOP configurations
+        List<Player> playersToSave = new ArrayList<>();
+        try {
+            // Fetch live HTML from official Fantacalcio.it quotes page
+            Document doc = Jsoup.connect("https://www.fantacalcio.it/quotazioni-fantacalcio")
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .referrer("https://www.google.com")
+                    .timeout(20000)
+                    .get();
+
+            Elements rows = doc.select("tr.player-row");
+            if (rows.isEmpty()) {
+                throw new IOException("Nessun giocatore trovato nella pagina");
+            }
+
+            for (Element row : rows) {
+                try {
+                    String name = row.select(".player-name span").text().trim();
+                    if (name.isEmpty()) continue;
+
+                    String roleStr = row.attr("data-filter-role-classic").toUpperCase();
+                    Role role;
+                    try {
+                        role = Role.valueOf(roleStr);
+                    } catch (Exception e) {
+                        continue;
+                    }
+
+                    String teamAbbr = row.select(".player-team").text().trim().toUpperCase();
+                    String team = mapTeamAbbreviation(teamAbbr);
+
+                    String initialQuoteStr = row.select(".player-classic-initial-price").text().trim();
+                    int initialQuote = initialQuoteStr.isEmpty() ? 1 : Integer.parseInt(initialQuoteStr);
+
+                    String currentQuoteStr = row.select(".player-classic-current-price").text().trim();
+                    int currentQuote = currentQuoteStr.isEmpty() ? initialQuote : Integer.parseInt(currentQuoteStr);
+
+                    String fvmStr = row.select(".player-classic-fvm").text().trim();
+                    int fvm = fvmStr.isEmpty() ? 0 : Integer.parseInt(fvmStr);
+
+                    Player player = createOrUpdatePlayer(name, role, team, initialQuote, currentQuote, fvm);
+                    playersToSave.add(player);
+                } catch (Exception e) {
+                    // Skip single player error to keep it robust
+                }
+            }
+
+            if (!playersToSave.isEmpty()) {
+                playerRepository.saveAll(playersToSave);
+                return playersToSave.size();
+            }
+
+        } catch (IOException e) {
+            // Fallback to offline mock database if external site is down or blocks us
+            System.err.println("Errore scraping live, uso fallback offline: " + e.getMessage());
+        }
+
+        return loadFallbackPlayers();
+    }
+
+    private Player createOrUpdatePlayer(String name, Role role, String team, int initialQuote, int currentQuote, int fvm) {
+        Optional<Player> existingOpt = playerRepository.findByName(name);
+        Player player = existingOpt.orElseGet(() -> {
+            Player p = new Player();
+            p.setName(name);
+            return p;
+        });
+
+        player.setTeam(team);
+        player.setRole(role);
+        player.setInitialQuote(initialQuote);
+        player.setCurrentQuote(currentQuote);
+
+        // Assign statistical defaults based on role and FVM
+        double expectedBaseRating = 5.8;
+        if (role == Role.P) expectedBaseRating = 6.0;
+        else if (role == Role.C) expectedBaseRating = 5.9;
+        else if (role == Role.A) expectedBaseRating = 6.1;
+
+        // Scale base rating slightly with FVM (up to +0.8)
+        expectedBaseRating += Math.min(0.8, fvm / 500.0);
+        player.setExpectedBaseRating(Math.round(expectedBaseRating * 100.0) / 100.0);
+
+        // Set pieces specialists mapping (based on real known Serie A kickers)
+        double penalty = 0.0;
+        double freekick = 0.0;
+        double corner = 0.0;
+        boolean setPieceSpecialist = false;
+        double oopIndex = 0.0;
+        boolean isOop = false;
+
+        String nameLower = name.toLowerCase();
+        if (nameLower.contains("calhanoglu")) {
+            penalty = 0.95; freekick = 0.6; corner = 0.5; setPieceSpecialist = true;
+        } else if (nameLower.contains("dybala")) {
+            penalty = 0.9; freekick = 0.7; corner = 0.6; setPieceSpecialist = true;
+        } else if (nameLower.contains("vlahovic")) {
+            penalty = 0.85; freekick = 0.5; setPieceSpecialist = true;
+        } else if (nameLower.contains("sommer")) {
+            // Goalie
+        } else if (nameLower.contains("dimarco")) {
+            freekick = 0.4; corner = 0.7; setPieceSpecialist = true;
+            isOop = true; oopIndex = 0.7;
+        } else if (nameLower.contains("hernandez") && nameLower.contains("theo")) {
+            penalty = 0.2; freekick = 0.3; setPieceSpecialist = true;
+            isOop = true; oopIndex = 0.8;
+        } else if (nameLower.contains("koopmeiners")) {
+            penalty = 0.7; freekick = 0.3; corner = 0.4; setPieceSpecialist = true;
+        } else if (nameLower.contains("pulisic")) {
+            penalty = 0.4; corner = 0.3; setPieceSpecialist = true;
+        } else if (nameLower.contains("gudmundsson")) {
+            penalty = 0.8; freekick = 0.5; corner = 0.4; setPieceSpecialist = true;
+        } else if (nameLower.contains("lautaro")) {
+            penalty = 0.75; setPieceSpecialist = true;
+        } else if (nameLower.contains("lookman")) {
+            penalty = 0.6; setPieceSpecialist = true;
+        } else if (nameLower.contains("retegui")) {
+            penalty = 0.7; setPieceSpecialist = true;
+        } else if (nameLower.contains("zapata")) {
+            penalty = 0.4; setPieceSpecialist = true;
+        } else if (nameLower.contains("lukaku")) {
+            penalty = 0.8; setPieceSpecialist = true;
+        } else if (nameLower.contains("dovbyk")) {
+            penalty = 0.7; setPieceSpecialist = true;
+        } else if (nameLower.contains("kvaratskhelia")) {
+            penalty = 0.5; freekick = 0.3; setPieceSpecialist = true;
+        } else {
+            // General defaults for high FVM players
+            if (fvm > 200) {
+                if (role == Role.A || role == Role.C) {
+                    penalty = 0.15;
+                    setPieceSpecialist = true;
+                }
+            }
+            // Some fullbacks are OOP
+            if (role == Role.D && (nameLower.contains("bellanova") || nameLower.contains("carlos augusto") || nameLower.contains("cambiaso") || nameLower.contains("dodo") || nameLower.contains("dumfries"))) {
+                isOop = true;
+                oopIndex = 0.5;
+            }
+        }
+
+        player.setPenaltyTakerPercentage(penalty);
+        player.setFreeKickSpecialistPercentage(freekick);
+        player.setCornerSpecialistPercentage(corner);
+        player.setIsSetPieceSpecialist(setPieceSpecialist);
+        player.setIsOop(isOop);
+        player.setOopIndex(oopIndex);
+
+        // Calculate EV
+        double calculatedEv = expectedBaseRating;
+        calculatedEv += penalty * 3.0;
+        calculatedEv += freekick * 3.0;
+        calculatedEv += corner * 1.0;
+        if (isOop) {
+            calculatedEv += oopIndex * 1.5;
+        }
+        player.setExpectedValue(Math.round(calculatedEv * 100.0) / 100.0);
+
+        return player;
+    }
+
+    private String mapTeamAbbreviation(String abbr) {
+        switch (abbr) {
+            case "INT": return "Inter";
+            case "MIL": return "Milan";
+            case "JUV": return "Juventus";
+            case "NAP": return "Napoli";
+            case "ROM": return "Roma";
+            case "LAZ": return "Lazio";
+            case "ATA": return "Atalanta";
+            case "FIO": return "Fiorentina";
+            case "TOR": return "Torino";
+            case "BOL": return "Bologna";
+            case "MON": return "Monza";
+            case "GEN": return "Genoa";
+            case "PAR": return "Parma";
+            case "EMP": return "Empoli";
+            case "VER": return "Verona";
+            case "UDI": return "Udinese";
+            case "CAG": return "Cagliari";
+            case "LEC": return "Lecce";
+            case "VEN": return "Venezia";
+            case "COM": return "Como";
+            default:
+                if (abbr.isEmpty()) return "Svincolato";
+                return abbr.substring(0, 1).toUpperCase() + abbr.substring(1).toLowerCase();
+        }
+    }
+
+    private int loadFallbackPlayers() {
         List<ScrapedPlayerDto> scrapedPlayers = Arrays.asList(
             // Portieri (P)
             new ScrapedPlayerDto("Yann Sommer", "Inter", Role.P, 18, 6.2, 0.0, false, 0.0, 0.0, 0.0, false),
@@ -77,29 +271,21 @@ public class ScraperService {
 
         int updatedCount = 0;
         for (ScrapedPlayerDto dto : scrapedPlayers) {
-            // Process the information and calculate EV (Expected Value)
-            // EV = BaseRating + (Rigori * 3.0) + (Punizioni * 3.0) + (Corner * 1.0)
             double calculatedEv = dto.expectedBaseRating;
             calculatedEv += dto.penaltyTakerPercentage * 3.0;
             calculatedEv += dto.freeKickSpecialistPercentage * 3.0;
             calculatedEv += dto.cornerSpecialistPercentage * 1.0;
-            
-            // Add OOP index bonus: oopIndex * 1.5
             if (dto.isOop) {
                 calculatedEv += dto.oopIndex * 1.5;
             }
-
-            // Round to 2 decimal places
             double roundedEv = Math.round(calculatedEv * 100.0) / 100.0;
 
             Optional<Player> existingOpt = playerRepository.findByName(dto.name);
-            Player player;
-            if (existingOpt.isPresent()) {
-                player = existingOpt.get();
-            } else {
-                player = new Player();
-                player.setName(dto.name);
-            }
+            Player player = existingOpt.orElseGet(() -> {
+                Player p = new Player();
+                p.setName(dto.name);
+                return p;
+            });
 
             player.setTeam(dto.team);
             player.setRole(dto.role);
@@ -117,7 +303,6 @@ public class ScraperService {
             playerRepository.save(player);
             updatedCount++;
         }
-
         return updatedCount;
     }
 
