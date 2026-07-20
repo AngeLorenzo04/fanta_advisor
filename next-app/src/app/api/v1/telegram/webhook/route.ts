@@ -23,6 +23,10 @@ export async function POST(request: Request) {
             await handleBestTeam(chatId, text);
         } else if (text.startsWith('/exchange')) {
             await handleExchange(chatId, text);
+        } else if (text.startsWith('/mister')) {
+            await handleMisterList(chatId);
+        } else if (text.startsWith('/id')) {
+            await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
             await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team \\[ID\\] o /exchange \\[ID1\\] \\[Nome1\\] \\[ID2\\] \\[Nome2\\]");
         }
@@ -41,17 +45,29 @@ async function handleBestTeam(chatId: number, text: string) {
         return;
     }
 
-    const misterId = parseInt(parts[1]);
-    if (isNaN(misterId)) {
-        await sendMessage(chatId, "L'ID del mister deve essere un numero\\.");
+    let participant;
+    const inputId = parseInt(parts[1]);
+    
+    if (isNaN(inputId)) {
+        // Se non è un numero, cerchiamo per nome
+        const nameQuery = parts.slice(1).join(' ').toLowerCase();
+        participant = await prisma.auctionParticipant.findFirst({
+            where: {
+                name: {
+                    contains: nameQuery,
+                }
+            }
+        });
+    } else {
+        participant = await prisma.auctionParticipant.findUnique({ where: { id: inputId } });
+    }
+
+    if (!participant) {
+        await sendMessage(chatId, `Mister non trovato\\. Usa /mister per vedere la lista\\.`);
         return;
     }
 
-    const participant = await prisma.participant.findUnique({ where: { id: misterId } });
-    if (!participant) {
-        await sendMessage(chatId, `Mister con ID ${misterId} non trovato\\.`);
-        return;
-    }
+    const misterId = participant.id;
 
     try {
         // Construct absolute URL for fetch in Next.js Server context
@@ -108,8 +124,8 @@ async function handleExchange(chatId: number, text: string) {
     }
 
     try {
-        const p1 = await prisma.participant.findUnique({ where: { id: id1 }, include: { purchases: { include: { player: true } } } });
-        const p2 = await prisma.participant.findUnique({ where: { id: id2 }, include: { purchases: { include: { player: true } } } });
+        const p1 = await prisma.auctionParticipant.findUnique({ where: { id: id1 }, include: { purchases: { include: { player: true } } } });
+        const p2 = await prisma.auctionParticipant.findUnique({ where: { id: id2 }, include: { purchases: { include: { player: true } } } });
 
         if (!p1 || !p2) {
             await sendMessage(chatId, "Uno dei mister non esiste\\.");
@@ -156,5 +172,25 @@ async function handleExchange(chatId: number, text: string) {
     } catch (e) {
         console.error("Error handling exchange:", e);
         await sendMessage(chatId, "Errore interno durante l'analisi dello scambio\\.");
+    }
+}
+
+async function handleMisterList(chatId: number) {
+    try {
+        const participants = await prisma.auctionParticipant.findMany();
+        if (participants.length === 0) {
+            await sendMessage(chatId, "Non ci sono mister registrati\\.");
+            return;
+        }
+
+        let msg = `👤 *Lista Mister Fanta Advisor* 👤\n\n`;
+        participants.forEach(p => {
+            msg += `ID: *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
+        });
+        
+        await sendMessage(chatId, msg);
+    } catch (e) {
+        console.error("Error fetching mister list:", e);
+        await sendMessage(chatId, "Errore interno nel recuperare la lista\\.");
     }
 }
