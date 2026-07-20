@@ -1,0 +1,160 @@
+import { NextResponse } from 'next/server';
+import { sendMessage } from '../telegram-utils';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+function escapeMarkdown(text: string): string {
+    return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
+}
+
+export async function POST(request: Request) {
+    try {
+        const update = await request.json();
+        
+        if (!update.message || !update.message.text) {
+            return NextResponse.json({ success: true }); // Acknowledge to stop Telegram from retrying
+        }
+
+        const chatId = update.message.chat.id;
+        const text = update.message.text.trim();
+
+        if (text.startsWith('/best_team')) {
+            await handleBestTeam(chatId, text);
+        } else if (text.startsWith('/exchange')) {
+            await handleExchange(chatId, text);
+        } else if (text.startsWith('/start')) {
+            await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team \\[ID\\] o /exchange \\[ID1\\] \\[Nome1\\] \\[ID2\\] \\[Nome2\\]");
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (e) {
+        console.error("Webhook error:", e);
+        return NextResponse.json({ success: false }, { status: 500 });
+    }
+}
+
+async function handleBestTeam(chatId: number, text: string) {
+    const parts = text.split(' ');
+    if (parts.length < 2) {
+        await sendMessage(chatId, "Uso corretto: /best\\_team \\[ID\\_Mister\\]");
+        return;
+    }
+
+    const misterId = parseInt(parts[1]);
+    if (isNaN(misterId)) {
+        await sendMessage(chatId, "L'ID del mister deve essere un numero\\.");
+        return;
+    }
+
+    const participant = await prisma.participant.findUnique({ where: { id: misterId } });
+    if (!participant) {
+        await sendMessage(chatId, `Mister con ID ${misterId} non trovato\\.`);
+        return;
+    }
+
+    try {
+        // Construct absolute URL for fetch in Next.js Server context
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const res = await fetch(`${baseUrl}/api/v1/lineups/${misterId}/optimal`);
+        if (!res.ok) {
+            await sendMessage(chatId, "Errore nel calcolo della formazione\\.");
+            return;
+        }
+        
+        const data = await res.json();
+        if (!data || !data.starting11) {
+            await sendMessage(chatId, "Nessuna rosa valida trovata\\.");
+            return;
+        }
+
+        let msg = `🏆 *Miglior Formazione per ${escapeMarkdown(participant.name)}* 🏆\n\n`;
+        msg += `📐 Modulo: *${escapeMarkdown(data.formation)}*\n`;
+        msg += `🎯 Voto Atteso: *${escapeMarkdown(data.totalProjectedScore.toFixed(2))}*\n\n`;
+        
+        msg += `*Titolari:*\n`;
+        data.starting11.forEach((p: any) => {
+            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
+        });
+
+        msg += `\n*Panchina:*\n`;
+        data.bench.forEach((p: any) => {
+            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
+        });
+
+        await sendMessage(chatId, msg);
+
+    } catch (e) {
+        console.error("Error fetching optimal lineup:", e);
+        await sendMessage(chatId, "Errore interno durante il calcolo\\.");
+    }
+}
+
+async function handleExchange(chatId: number, text: string) {
+    const parts = text.split(' ');
+    if (parts.length < 5) {
+        await sendMessage(chatId, "Uso corretto: /exchange \\[ID\\_Mister1\\] \\[Giocatore1\\] \\[ID\\_Mister2\\] \\[Giocatore2\\]\nEs: /exchange 1 Lukaku 2 Lautaro");
+        return;
+    }
+
+    const id1 = parseInt(parts[1]);
+    const player1Name = parts[2].toLowerCase();
+    const id2 = parseInt(parts[3]);
+    const player2Name = parts[4].toLowerCase();
+
+    if (isNaN(id1) || isNaN(id2)) {
+        await sendMessage(chatId, "Gli ID Mister devono essere numeri\\.");
+        return;
+    }
+
+    try {
+        const p1 = await prisma.participant.findUnique({ where: { id: id1 }, include: { purchases: { include: { player: true } } } });
+        const p2 = await prisma.participant.findUnique({ where: { id: id2 }, include: { purchases: { include: { player: true } } } });
+
+        if (!p1 || !p2) {
+            await sendMessage(chatId, "Uno dei mister non esiste\\.");
+            return;
+        }
+
+        const bought1 = p1.purchases.find(p => p.player.name.toLowerCase().includes(player1Name));
+        const bought2 = p2.purchases.find(p => p.player.name.toLowerCase().includes(player2Name));
+
+        if (!bought1) {
+            await sendMessage(chatId, `Il mister ${escapeMarkdown(p1.name)} non ha nessun giocatore chiamato ${escapeMarkdown(player1Name)}\\.`);
+            return;
+        }
+        if (!bought2) {
+            await sendMessage(chatId, `Il mister ${escapeMarkdown(p2.name)} non ha nessun giocatore chiamato ${escapeMarkdown(player2Name)}\\.`);
+            return;
+        }
+
+        const g1 = bought1.player;
+        const g2 = bought2.player;
+
+        const val1 = g1.currentQuote || g1.initialQuote || 1;
+        const val2 = g2.currentQuote || g2.initialQuote || 1;
+        const diff = val2 - val1;
+
+        let msg = `⚖️ *Analisi Scambio* ⚖️\n\n`;
+        msg += `*${escapeMarkdown(p1.name)}* cede: ${g1.role} ${escapeMarkdown(g1.name)} \\(Valore: ${val1}\\)\n`;
+        msg += `*${escapeMarkdown(p2.name)}* cede: ${g2.role} ${escapeMarkdown(g2.name)} \\(Valore: ${val2}\\)\n\n`;
+
+        if (g1.role !== g2.role) {
+            msg += `⚠️ *Attenzione:* I ruoli sono diversi \\(${g1.role} vs ${g2.role}\\)\\. Lo scambio potrebbe invalidare i limiti della rosa\\!\n\n`;
+        }
+
+        if (diff > 0) {
+            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p1.name)}* \\(+${diff} in Valore rosa\\)\\.`;
+        } else if (diff < 0) {
+            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p2.name)}* \\(+${Math.abs(diff)} in Valore rosa\\)\\.`;
+        } else {
+            msg += `🤝 Lo scambio è *perfettamente equo* in termini di Valore\\!`;
+        }
+
+        await sendMessage(chatId, msg);
+
+    } catch (e) {
+        console.error("Error handling exchange:", e);
+        await sendMessage(chatId, "Errore interno durante l'analisi dello scambio\\.");
+    }
+}
