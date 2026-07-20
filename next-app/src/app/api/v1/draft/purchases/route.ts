@@ -25,6 +25,17 @@ export async function POST(request: Request) {
       const participant = await tx.auctionParticipant.findUnique({ where: { id: buyerParticipantId } });
       if (!participant) throw new Error('Partecipante non trovato');
 
+      const roleLimits: Record<string, number> = { 'P': 3, 'D': 8, 'C': 8, 'A': 6 };
+      const currentPurchases = await tx.purchase.findMany({
+        where: { participantId: buyerParticipantId },
+        include: { player: true }
+      });
+      
+      const countInRole = currentPurchases.filter(p => p.player.role === player.role).length;
+      if (countInRole >= (roleLimits[player.role] || 99)) {
+        throw new Error(`Limite raggiunto per il ruolo ${player.role} (${roleLimits[player.role]} slot massimi)`);
+      }
+
       if (participant.remainingBudget < price) {
         throw new Error('Crediti insufficienti');
       }

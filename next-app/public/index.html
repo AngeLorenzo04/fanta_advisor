@@ -1860,6 +1860,13 @@
                     return;
                 }
 
+                const roleLimits = { 'P': 3, 'D': 8, 'C': 8, 'A': 6 };
+                const countInRole = state.purchases.filter(p => p.participant.id === participant.id && p.player.role === player.role).length;
+                if (countInRole >= (roleLimits[player.role] || 99)) {
+                    toast(`Limite raggiunto per il ruolo ${player.role} (${roleLimits[player.role]} slot massimi)`, "error");
+                    return;
+                }
+
                 // Deduct credits and update
                 participant.remainingBudget -= price;
                 player.isAvailable = false;
@@ -2482,6 +2489,17 @@
 
                 // Temporarily restore budget
                 oldParticipant.remainingBudget += purchase.price;
+
+                if (newBuyerId !== oldParticipant.id) {
+                    const roleLimits = { 'P': 3, 'D': 8, 'C': 8, 'A': 6 };
+                    const countInRole = state.purchases.filter(p => p.participant.id === newParticipant.id && p.player.role === purchase.player.role).length;
+                    if (countInRole >= (roleLimits[purchase.player.role] || 99)) {
+                        // Revert old budget restore
+                        oldParticipant.remainingBudget -= purchase.price;
+                        toast(`Limite raggiunto per il ruolo ${purchase.player.role} (${roleLimits[purchase.player.role]} slot massimi)`, "error");
+                        return;
+                    }
+                }
 
                 if (newParticipant.remainingBudget < newPrice) {
                     // Revert old budget restore

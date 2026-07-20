@@ -31,6 +31,19 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       const newParticipant = await tx.auctionParticipant.findUnique({ where: { id: buyerParticipantId } });
       if (!newParticipant) throw new Error('Nuovo partecipante non trovato');
 
+      if (buyerParticipantId !== oldParticipant.id) {
+        const roleLimits: Record<string, number> = { 'P': 3, 'D': 8, 'C': 8, 'A': 6 };
+        const currentPurchases = await tx.purchase.findMany({
+          where: { participantId: buyerParticipantId },
+          include: { player: true }
+        });
+        
+        const countInRole = currentPurchases.filter(p => p.player.role === purchase.player.role).length;
+        if (countInRole >= (roleLimits[purchase.player.role] || 99)) {
+          throw new Error(`Limite raggiunto per il ruolo ${purchase.player.role} (${roleLimits[purchase.player.role]} slot massimi)`);
+        }
+      }
+
       if (newParticipant.remainingBudget < price) {
         throw new Error('Crediti insufficienti per il nuovo acquirente');
       }
