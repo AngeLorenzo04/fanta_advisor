@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id);
     const team = await prisma.auctionParticipant.findUnique({ where: { id } });
     
@@ -15,8 +16,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id);
     const body = await request.json();
     const { name, initialBudget, remainingBudget } = body;
@@ -44,8 +46,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id);
     const team = await prisma.auctionParticipant.findUnique({ 
       where: { id },

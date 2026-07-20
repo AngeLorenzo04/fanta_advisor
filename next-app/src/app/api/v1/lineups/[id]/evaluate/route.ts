@@ -44,8 +44,9 @@ function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
   };
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id);
     const body = await request.json();
     const startingPlayerIds: number[] = body.startingPlayerIds || [];

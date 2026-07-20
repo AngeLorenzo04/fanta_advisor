@@ -44,8 +44,9 @@ function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
   };
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const id = parseInt(params.id);
     const purchases = await prisma.purchase.findMany({
       where: { participantId: id },
