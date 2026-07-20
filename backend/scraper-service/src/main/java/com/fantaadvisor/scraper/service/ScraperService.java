@@ -3,6 +3,7 @@ package com.fantaadvisor.scraper.service;
 import com.fantaadvisor.shared.model.Player;
 import com.fantaadvisor.shared.model.Role;
 import com.fantaadvisor.shared.repository.PlayerRepository;
+import com.fantaadvisor.shared.repository.PurchaseRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,8 +24,54 @@ public class ScraperService {
     @Autowired
     private PlayerRepository playerRepository;
 
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+
+    private void deduplicatePlayers() {
+        List<Player> allPlayers = playerRepository.findAll();
+        for (int i = 0; i < allPlayers.size(); i++) {
+            Player p1 = allPlayers.get(i);
+            String n1 = p1.getName().toLowerCase().trim();
+            
+            for (int j = i + 1; j < allPlayers.size(); j++) {
+                Player p2 = allPlayers.get(j);
+                String n2 = p2.getName().toLowerCase().trim();
+                
+                if (n1.equals(n2) || n1.endsWith(" " + n2) || n2.endsWith(" " + n1)) {
+                    // Duplicate found
+                    boolean p1Has = purchaseRepository.findByPlayerId(p1.getId()).isPresent();
+                    boolean p2Has = purchaseRepository.findByPlayerId(p2.getId()).isPresent();
+                    
+                    if (p1Has && p2Has) {
+                        continue; // Keep both if both are somehow purchased to prevent FK violation
+                    }
+                    
+                    if (p1Has) {
+                        playerRepository.delete(p2);
+                    } else if (p2Has) {
+                        playerRepository.delete(p1);
+                    } else {
+                        // Delete one of them, keep the one with shorter name (matches scraper)
+                        if (n1.length() < n2.length()) {
+                            playerRepository.delete(p2);
+                        } else {
+                            playerRepository.delete(p1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Transactional
     public int scrapeAndLoadPlayers() {
+        // Clean up duplicates from database before scraping/updating
+        try {
+            deduplicatePlayers();
+        } catch (Exception e) {
+            System.err.println("Errore durante la deduplicazione dei giocatori: " + e.getMessage());
+        }
+
         List<Player> playersToSave = new ArrayList<>();
         try {
             // Fetch live HTML from official Fantacalcio.it quotes page
@@ -86,12 +133,29 @@ public class ScraperService {
 
     private Player createOrUpdatePlayer(String name, Role role, String team, int initialQuote, int currentQuote, int fvm) {
         Optional<Player> existingOpt = playerRepository.findByName(name);
+        if (!existingOpt.isPresent()) {
+            // Find existing player using flexible name matching to prevent duplicates with seeded names
+            List<Player> allPlayers = playerRepository.findAll();
+            for (Player p : allPlayers) {
+                String existingLower = p.getName().toLowerCase().trim();
+                String scrapedLower = name.toLowerCase().trim();
+                if (existingLower.equals(scrapedLower) || 
+                    existingLower.endsWith(" " + scrapedLower) || 
+                    scrapedLower.endsWith(" " + existingLower)) {
+                    existingOpt = Optional.of(p);
+                    break;
+                }
+            }
+        }
+
         Player player = existingOpt.orElseGet(() -> {
             Player p = new Player();
             p.setName(name);
             return p;
         });
 
+        // Keep name updated to the scraped version (e.g. just Vlahovic/Dybala)
+        player.setName(name);
         player.setTeam(team);
         player.setRole(role);
         player.setInitialQuote(initialQuote);

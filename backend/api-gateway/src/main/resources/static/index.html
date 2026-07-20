@@ -417,7 +417,7 @@
 
         .metric-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             margin-top: 0.5rem;
         }
@@ -1035,6 +1035,10 @@
                             <div class="metric-label">Voto Base Atteso</div>
                             <div class="metric-value" id="active-player-base-rating">0.0</div>
                         </div>
+                        <div class="metric-box" style="border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.02);">
+                            <div class="metric-label" style="color: var(--accent-success); font-weight: 600;">Prezzo Max Consigliato</div>
+                            <div class="metric-value" style="color: var(--accent-success); font-size: 1.3rem;" id="active-player-suggested-bid">1 FM</div>
+                        </div>
                     </div>
 
                     <!-- Purchase Registration form -->
@@ -1178,6 +1182,7 @@
             activePlayerEv: document.getElementById('active-player-ev'),
             activePlayerInitialPrice: document.getElementById('active-player-initial-price'),
             activePlayerBaseRating: document.getElementById('active-player-base-rating'),
+            activePlayerSuggestedBid: document.getElementById('active-player-suggested-bid'),
             buyerSelect: document.getElementById('buyer-select'),
             bidPrice: document.getElementById('bid-price'),
             btnRegisterPurchase: document.getElementById('btn-register-purchase'),
@@ -1488,6 +1493,31 @@
             elements.activePlayerEv.textContent = player.expectedValue.toFixed(2);
             elements.activePlayerInitialPrice.textContent = player.initialQuote;
             elements.activePlayerBaseRating.textContent = player.expectedBaseRating.toFixed(2);
+
+            // Calculate suggested maximum bid dynamically (Dynamic Bid Advisor)
+            let suggestedMax = 1;
+            const ev = player.expectedValue;
+            const role = player.role;
+            
+            if (role === 'P') {
+                suggestedMax = Math.max(1, (ev - 5.8) * 60);
+            } else if (role === 'D') {
+                suggestedMax = Math.max(1, (ev - 5.8) * 15);
+            } else if (role === 'C') {
+                suggestedMax = Math.max(1, (ev - 5.9) * 20);
+            } else if (role === 'A') {
+                suggestedMax = Math.max(1, (ev - 6.0) * 45);
+            }
+            
+            if (state.participants.length > 0) {
+                const otherBudgets = state.participants.map(m => m.remainingBudget);
+                const maxOtherBudget = Math.max(...otherBudgets);
+                const budgetFactor = Math.min(1.2, Math.max(0.2, maxOtherBudget / 450.0));
+                suggestedMax = suggestedMax * budgetFactor;
+            }
+
+            suggestedMax = Math.round(Math.max(1, suggestedMax));
+            elements.activePlayerSuggestedBid.textContent = `${suggestedMax} FM`;
 
             elements.bidPrice.value = player.initialQuote;
 

@@ -42,12 +42,6 @@
             <artifactId>jsoup</artifactId>
         </dependency>
 
-        <!-- Playwright Java for JS-rendered Scraping -->
-        <dependency>
-            <groupId>com.microsoft.playwright</groupId>
-            <artifactId>playwright</artifactId>
-        </dependency>
-
         <!-- Shared domain model module -->
         <dependency>
             <groupId>com.fantaadvisor</groupId>
