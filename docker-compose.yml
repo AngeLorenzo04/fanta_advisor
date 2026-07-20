@@ -43,8 +43,7 @@ services:
   scraper-service:
     build:
       context: ./backend
-      args:
-        MODULE: scraper-service
+      dockerfile: Dockerfile.scraper
     container_name: fanta-scraper-service
     ports:
       - "8082:8082"

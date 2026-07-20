@@ -36,10 +36,17 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Jsoup for HTML Scraping -->
+        <!-- Jsoup for HTML Parsing -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
+        </dependency>
+
+        <!-- Microsoft Playwright for Headless Scraping -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>1.40.0</version>
         </dependency>
 
         <!-- Shared domain model module -->

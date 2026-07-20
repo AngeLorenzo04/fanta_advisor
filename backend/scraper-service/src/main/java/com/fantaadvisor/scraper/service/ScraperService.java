@@ -8,6 +8,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,13 +80,19 @@ public class ScraperService {
         }
 
         List<Player> playersToSave = new ArrayList<>();
-        try {
-            // Fetch live HTML from official Fantacalcio.it quotes page
-            Document doc = Jsoup.connect("https://www.fantacalcio.it/quotazioni-fantacalcio")
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .referrer("https://www.google.com")
-                    .timeout(20000)
-                    .get();
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            
+            // Navigate and wait for network to be idle to ensure SPA loads
+            page.navigate("https://www.fantacalcio.it/quotazioni-fantacalcio", new Page.NavigateOptions().setWaitUntil(com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE));
+            
+            // Allow some extra time for dynamic table to render
+            page.waitForTimeout(3000);
+            
+            String html = page.content();
+            Document doc = Jsoup.parse(html);
+            browser.close();
 
             Elements rows = doc.select("tr.player-row");
             if (rows.isEmpty()) {
@@ -126,9 +136,9 @@ public class ScraperService {
                 return playersToSave.size();
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Fallback to offline mock database if external site is down or blocks us
-            System.err.println("Errore scraping live, uso fallback offline: " + e.getMessage());
+            System.err.println("Errore scraping live con Playwright, uso fallback offline: " + e.getMessage());
         }
 
         return loadFallbackPlayers();
@@ -433,11 +443,16 @@ public class ScraperService {
 
     public List<MatchFixture> scrapeNextMatchdayFixtures() {
         List<MatchFixture> fixtures = new ArrayList<>();
-        try {
-            // Tentativo live su probabili formazioni
-            Document doc = Jsoup.connect("https://www.fantacalcio.it/probabili-formazioni-serie-a")
-                    .userAgent("Mozilla/5.0")
-                    .get();
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+            Page page = browser.newPage();
+            
+            page.navigate("https://www.fantacalcio.it/probabili-formazioni-serie-a", new Page.NavigateOptions().setWaitUntil(com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE));
+            page.waitForTimeout(2000);
+            
+            String html = page.content();
+            Document doc = Jsoup.parse(html);
+            browser.close();
 
             Elements matchBlocks = doc.select(".match-block"); // Ipotesi selettore generico
             if (!matchBlocks.isEmpty()) {
@@ -454,7 +469,7 @@ public class ScraperService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Errore scraping probabili formazioni: " + e.getMessage());
+            System.err.println("Errore scraping fixtures con Playwright, uso hardcoded: " + e.getMessage());
         }
 
         // Se vuoto o fallito, usiamo un fallback locale hardcoded finto per testing
