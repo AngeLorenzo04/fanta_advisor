@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Player {
@@ -45,4 +47,14 @@ model Purchase {
   participant   AuctionParticipant @relation(fields: [participantId], references: [id])
 
   @@map("purchases")
+}
+
+model MatchFixture {
+  id               Int    @id @default(autoincrement())
+  homeTeam         String @map("home_team")
+  awayTeam         String @map("away_team")
+  homeTeamStrength Int    @map("home_team_strength")
+  awayTeamStrength Int    @map("away_team_strength")
+
+  @@map("match_fixtures")
 }
