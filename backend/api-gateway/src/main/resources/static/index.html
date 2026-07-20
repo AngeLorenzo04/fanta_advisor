@@ -3014,6 +3014,11 @@
                     return;
                 }
 
+                // Avvia la sincronizzazione in automatico
+                if (elements.btnTriggerScraper) {
+                    elements.btnTriggerScraper.click();
+                }
+
                 try {
                     const res = await fetch(`${API_URL}/lineups/${participantId}/optimal`);
                     if (res.ok) {
