@@ -1116,6 +1116,123 @@
             align-items: center;
             font-size: 0.85rem;
         }
+
+        /* Evaluation Workspace Styles */
+        .evaluation-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            width: 100%;
+        }
+
+        .eval-table-card {
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+        }
+
+        .eval-section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .eval-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .eval-table th {
+            text-align: left;
+            padding: 0.85rem 1rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .eval-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        .rating-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .rating-bar-bg {
+            flex-grow: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100px;
+        }
+
+        .rating-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--accent-solid);
+        }
+
+        .rating-bar-fill.gk { background: var(--color-p); }
+        .rating-bar-fill.df { background: var(--color-d); }
+        .rating-bar-fill.mf { background: var(--color-c); }
+        .rating-bar-fill.fw { background: var(--color-a); }
+        .rating-bar-fill.global { background: linear-gradient(90deg, var(--accent-solid) 0%, #a855f7 100%); }
+
+        .rating-number {
+            font-weight: 700;
+            width: 28px;
+            font-size: 0.85rem;
+        }
+
+        .probability-pill {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .prob-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-success);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .prob-med {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-warning);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .prob-low {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--accent-error);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1137,6 +1254,7 @@
             <div class="nav-tabs" style="display: flex; gap: 0.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 0.25rem; border-radius: 12px; margin-left: 2rem;">
                 <button class="tab-btn active" id="tab-draft">📊 Draft Asta</button>
                 <button class="tab-btn" id="tab-rosters">🛡️ Rose Squadre</button>
+                <button class="tab-btn" id="tab-evaluation">📈 Valutazione Squadre</button>
             </div>
             <div class="status-section" style="display: flex; align-items: center; margin-left: auto;">
                 <button class="btn-secondary" id="btn-trigger-scraper" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 8px; margin-right: 1rem; border-color: var(--border-color); background: rgba(59, 130, 246, 0.1); color: var(--accent-solid); cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
@@ -1275,6 +1393,9 @@
         </section>
         </div>
         <div id="rosters-workspace" class="rosters-grid" style="display: none;">
+            <!-- Javascript populated -->
+        </div>
+        <div id="evaluation-workspace" class="evaluation-grid" style="display: none;">
             <!-- Javascript populated -->
         </div>
     </main>
@@ -1416,8 +1537,10 @@
             btnRegisterPurchase: document.getElementById('btn-register-purchase'),
             tabDraft: document.getElementById('tab-draft'),
             tabRosters: document.getElementById('tab-rosters'),
+            tabEvaluation: document.getElementById('tab-evaluation'),
             draftWorkspace: document.getElementById('draft-workspace'),
             rostersWorkspace: document.getElementById('rosters-workspace'),
+            evaluationWorkspace: document.getElementById('evaluation-workspace'),
             purchasesLog: document.getElementById('purchases-log-container'),
             managersList: document.getElementById('managers-list-container'),
             alertContainer: document.getElementById('alert-container'),
@@ -1651,6 +1774,9 @@
             populateManagersSelect();
             if (elements.rostersWorkspace.style.display === 'grid') {
                 renderRosters();
+            }
+            if (elements.evaluationWorkspace.style.display === 'flex') {
+                renderEvaluation();
             }
         }
 
@@ -2314,16 +2440,30 @@
         elements.tabDraft.addEventListener('click', () => {
             elements.tabDraft.classList.add('active');
             elements.tabRosters.classList.remove('active');
+            elements.tabEvaluation.classList.remove('active');
             elements.draftWorkspace.style.display = 'grid';
             elements.rostersWorkspace.style.display = 'none';
+            elements.evaluationWorkspace.style.display = 'none';
         });
 
         elements.tabRosters.addEventListener('click', () => {
             elements.tabRosters.classList.add('active');
             elements.tabDraft.classList.remove('active');
+            elements.tabEvaluation.classList.remove('active');
             elements.draftWorkspace.style.display = 'none';
             elements.rostersWorkspace.style.display = 'grid';
+            elements.evaluationWorkspace.style.display = 'none';
             renderRosters();
+        });
+
+        elements.tabEvaluation.addEventListener('click', () => {
+            elements.tabEvaluation.classList.add('active');
+            elements.tabDraft.classList.remove('active');
+            elements.tabRosters.classList.remove('active');
+            elements.draftWorkspace.style.display = 'none';
+            elements.rostersWorkspace.style.display = 'none';
+            elements.evaluationWorkspace.style.display = 'flex';
+            renderEvaluation();
         });
 
         function renderRosters() {
@@ -2418,6 +2558,253 @@
 
                 elements.rostersWorkspace.appendChild(card);
             });
+        }
+
+        function simulateRostersJS() {
+            const numTeams = state.participants.length;
+            if (numTeams === 0) return [];
+
+            const evaluations = state.participants.map(m => {
+                const managerPurchases = state.purchases.filter(p => p.participant.id === m.id);
+                const players = managerPurchases.map(p => p.player);
+
+                // gk
+                const gks = players.filter(p => p.role === 'P');
+                const gkVal = gks.length === 0 ? 0 : Math.max(...gks.map(p => p.expectedValue));
+                const gkRating = Math.min(100, Math.max(0, Math.round((gkVal / 6.5) * 100)));
+
+                // df
+                const dfs = players.filter(p => p.role === 'D').sort((a,b) => b.expectedValue - a.expectedValue);
+                const dfAvg = dfs.length === 0 ? 0 : dfs.slice(0, 4).reduce((acc,p) => acc + p.expectedValue, 0) / 4.0;
+                const dfRating = Math.min(100, Math.max(0, Math.round((dfAvg / 7.0) * 100)));
+
+                // mf
+                const mfs = players.filter(p => p.role === 'C').sort((a,b) => b.expectedValue - a.expectedValue);
+                const mfAvg = mfs.length === 0 ? 0 : mfs.slice(0, 4).reduce((acc,p) => acc + p.expectedValue, 0) / 4.0;
+                const mfRating = Math.min(100, Math.max(0, Math.round((mfAvg / 7.5) * 100)));
+
+                // fw
+                const fws = players.filter(p => p.role === 'A').sort((a,b) => b.expectedValue - a.expectedValue);
+                const fwAvg = fws.length === 0 ? 0 : fws.slice(0, 3).reduce((acc,p) => acc + p.expectedValue, 0) / 3.0;
+                const fwRating = Math.min(100, Math.max(0, Math.round((fwAvg / 8.5) * 100)));
+
+                // global
+                let globalRating = 0;
+                if (players.length > 0) {
+                    const weighted = 0.1 * gkRating + 0.25 * dfRating + 0.3 * mfRating + 0.35 * fwRating;
+                    const max = Math.max(gkRating, dfRating, mfRating, fwRating);
+                    const min = Math.min(gkRating, dfRating, mfRating, fwRating);
+                    const penalty = 0.4 * (max - min);
+                    globalRating = Math.min(100, Math.max(0, Math.round(weighted - penalty)));
+                }
+
+                return {
+                    participantId: m.id,
+                    participantName: m.name,
+                    ratingGk: gkRating,
+                    ratingDf: dfRating,
+                    ratingMf: mfRating,
+                    ratingFw: fwRating,
+                    ratingGlobal: globalRating,
+                    squadSize: players.length
+                };
+            });
+
+            // Run Monte Carlo simulation (10,000 iterations)
+            const iterations = 10000;
+            const totalPositions = new Array(numTeams).fill(0);
+            const totalPoints = new Array(numTeams).fill(0);
+            const winCounts = new Array(numTeams).fill(0);
+            const podiumCounts = new Array(numTeams).fill(0);
+
+            function gaussianRandom(mean, std) {
+                const u = 1 - Math.random();
+                const v = 1 - Math.random();
+                const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+                return mean + z * std;
+            }
+
+            for (let i = 0; i < iterations; i++) {
+                const seasonPoints = [];
+                for (let t = 0; t < numTeams; t++) {
+                    const team = evaluations[t];
+                    let mean = 64.0 + (team.ratingGlobal / 100.0) * 12.0;
+                    if (team.squadSize < 15) {
+                        mean -= (15 - team.squadSize);
+                    }
+                    let points = 0;
+                    for (let m = 0; m < 38; m++) {
+                        points += gaussianRandom(mean, 3.5);
+                    }
+                    seasonPoints.push({ index: t, points: points });
+                }
+
+                // Rank
+                seasonPoints.sort((a, b) => b.points - a.points);
+                for (let rank = 0; rank < numTeams; rank++) {
+                    const item = seasonPoints[rank];
+                    const pos = rank + 1;
+                    totalPositions[item.index] += pos;
+                    totalPoints[item.index] += item.points;
+                    if (pos === 1) winCounts[item.index]++;
+                    if (pos <= 3) podiumCounts[item.index]++;
+                }
+            }
+
+            for (let t = 0; t < numTeams; t++) {
+                evaluations[t].avgPosition = Math.round((totalPositions[t] / iterations) * 100) / 100;
+                evaluations[t].avgPoints = Math.round((totalPoints[t] / iterations) * 10) / 10;
+                evaluations[t].winProbability = Math.round((winCounts[t] / iterations) * 1000) / 10;
+                evaluations[t].podiumProbability = Math.round((podiumCounts[t] / iterations) * 1000) / 10;
+            }
+
+            evaluations.sort((a, b) => a.avgPosition - b.avgPosition);
+            return evaluations;
+        }
+
+        async function renderEvaluation() {
+            elements.evaluationWorkspace.innerHTML = `
+                <div style="grid-column: 1/-1; padding: 4rem; text-align: center; color: var(--text-muted);">
+                    <div class="loading-spinner" style="margin: 0 auto 1.5rem auto; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.05); border-top-color: var(--accent-solid); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    Esecuzione simulazione Monte Carlo in corso (10.000 iterazioni)...
+                </div>
+            `;
+
+            let evaluations = [];
+            if (isSimulationMode) {
+                evaluations = simulateRostersJS();
+            } else {
+                try {
+                    const res = await fetch(`${API_URL}/evaluation`);
+                    if (res.ok) {
+                        evaluations = await res.json();
+                    } else {
+                        toast("Errore nel caricamento della valutazione, uso fallback client-side", "warning");
+                        evaluations = simulateRostersJS();
+                    }
+                } catch (e) {
+                    evaluations = simulateRostersJS();
+                }
+            }
+
+            elements.evaluationWorkspace.innerHTML = '';
+
+            if (evaluations.length === 0) {
+                elements.evaluationWorkspace.innerHTML = `
+                    <div class="eval-table-card" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                        Nessuna squadra configurata per la valutazione. Gestisci le squadre per iniziare.
+                    </div>
+                `;
+                return;
+            }
+
+            // Render Ratings Card
+            const ratingsCard = document.createElement('div');
+            ratingsCard.className = 'eval-table-card';
+            
+            let ratingsRows = '';
+            evaluations.forEach(e => {
+                ratingsRows += `
+                    <tr>
+                        <td><strong>${e.participantName}</strong></td>
+                        <td>
+                            <div class="rating-bar-container">
+                                <span class="rating-number">${e.ratingGk}</span>
+                                <div class="rating-bar-bg"><div class="rating-bar-fill gk" style="width: ${e.ratingGk}%"></div></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="rating-bar-container">
+                                <span class="rating-number">${e.ratingDf}</span>
+                                <div class="rating-bar-bg"><div class="rating-bar-fill df" style="width: ${e.ratingDf}%"></div></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="rating-bar-container">
+                                <span class="rating-number">${e.ratingMf}</span>
+                                <div class="rating-bar-bg"><div class="rating-bar-fill mf" style="width: ${e.ratingMf}%"></div></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="rating-bar-container">
+                                <span class="rating-number">${e.ratingFw}</span>
+                                <div class="rating-bar-bg"><div class="rating-bar-fill fw" style="width: ${e.ratingFw}%"></div></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="rating-bar-container">
+                                <span class="rating-number" style="color: var(--accent-solid); font-size: 0.95rem; font-weight: 800;">${e.ratingGlobal}</span>
+                                <div class="rating-bar-bg" style="height: 10px;"><div class="rating-bar-fill global" style="width: ${e.ratingGlobal}%"></div></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            ratingsCard.innerHTML = `
+                <h3 class="eval-section-title">📊 Forza della Squadra e dei Reparti (1-100)</h3>
+                <div style="overflow-x: auto;">
+                    <table class="eval-table">
+                        <thead>
+                            <tr>
+                                <th>Squadra</th>
+                                <th>Porta</th>
+                                <th>Difesa</th>
+                                <th>Centrocampo</th>
+                                <th>Attacco</th>
+                                <th style="color: var(--accent-solid);">Global Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ratingsRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            elements.evaluationWorkspace.appendChild(ratingsCard);
+
+            // Render Monte Carlo Standings Card
+            const standingsCard = document.createElement('div');
+            standingsCard.className = 'eval-table-card';
+
+            let standingsRows = '';
+            evaluations.forEach((e, idx) => {
+                const winProbClass = e.winProbability > 25 ? 'prob-high' : (e.winProbability > 8 ? 'prob-med' : 'prob-low');
+                const podiumProbClass = e.podiumProbability > 50 ? 'prob-high' : (e.podiumProbability > 20 ? 'prob-med' : 'prob-low');
+
+                standingsRows += `
+                    <tr>
+                        <td><span style="font-weight: 800; color: var(--text-secondary); font-size: 1rem; display: inline-block; width: 24px;">#${idx + 1}</span></td>
+                        <td><strong>${e.participantName}</strong></td>
+                        <td><span class="probability-pill ${winProbClass}">${e.winProbability.toFixed(1)}%</span></td>
+                        <td><span class="probability-pill ${podiumProbClass}">${e.podiumProbability.toFixed(1)}%</span></td>
+                        <td><strong>${e.avgPoints.toFixed(1)} Pts</strong></td>
+                        <td>Pos. ${e.avgPosition.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+
+            standingsCard.innerHTML = `
+                <h3 class="eval-section-title">🏆 Classifica Simulata Post-Asta (10.000 simulazioni Monte Carlo)</h3>
+                <div style="overflow-x: auto;">
+                    <table class="eval-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Squadra</th>
+                                <th>Vittoria Campionato</th>
+                                <th>Piazzamento Podio</th>
+                                <th>Punti Medi Proiettati</th>
+                                <th>Posizione Media</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${standingsRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            elements.evaluationWorkspace.appendChild(standingsCard);
         }
 
         // --- INITIALIZATION ---
