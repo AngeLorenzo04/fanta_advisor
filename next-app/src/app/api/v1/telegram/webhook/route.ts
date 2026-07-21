@@ -27,10 +27,12 @@ export async function POST(request: Request) {
             await handleMisterList(chatId);
         } else if (text.startsWith('/rule')) {
             await handleRule(chatId);
+        } else if (text.startsWith('/info')) {
+            await handleInfo(chatId);
         } else if (text.startsWith('/id')) {
             await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
-            await sendMessage(chatId, "Benvenuto sotto la guida del Breznev Bot\\! I tuoi giocatori appartengono al popolo e le loro statistiche sono di proprietà dello Stato\\. Usa /best\\_team, /exchange, /mister o /rule per consultare il Piano Quinquennale\\.");
+            await sendMessage(chatId, "Benvenuto sotto la guida del Breznev Bot\\! I tuoi giocatori appartengono al popolo e le loro statistiche sono di proprietà dello Stato\\. Usa /best\\_team, /exchange, /mister, /rule o /info per consultare il Piano Quinquennale\\.");
         } else if (text.startsWith('/')) {
             const rawCmd = text.split(' ')[0].replace('/', '').replace(/@.*$/, '').toLowerCase();
             const customCmd = await (prisma as any).customCommand.findUnique({ where: { name: rawCmd } });
@@ -204,16 +206,25 @@ async function handleMisterList(chatId: number) {
 }
 
 async function handleRule(chatId: number) {
-    let msg = `📘 *Piano Quinquennale di Calcolo Breznev* 📘\n\n`;
+    let msg = `📜 *Direttive del Partito sui Comandi del Bot* 📜\n\n`;
+    msg += `Il Comitato Centrale ha approvato i seguenti strumenti per il popolo:\n\n`;
+    msg += `* /best\\_team \\[ID\\_Mister\\]* \\- Richiedi al Soviet Supremo la migliore formazione calcolata scientificamente per massimizzare la produzione del tuo collettivo\\.\n`;
+    msg += `* /exchange \\[ID1\\] \\[Gioc1\\] \\[ID2\\] \\[Gioc2\\]* \\- Invia una richiesta al Ministero del Commercio per valutare se uno scambio rispetta i principi di equità proletaria\\.\n`;
+    msg += `* /mister* \\- Consulta gli archivi del KGB per ottenere l'ID di Partito di tutti i compagni fantallenatori\\.\n`;
+    msg += `* /rule* \\- Consulta questo manifesto dei comandi di Partito\\.\n`;
+    msg += `* /info* \\- Richiedi il dossier dettagliato sul funzionamento dell'algoritmo di Stato \\(API\\)\\.\n`;
     
-    msg += `*1\\. Punteggi dei singoli compagni:*\n`;
-    msg += `Vengono calcolati espropriando le statistiche individuali a favore della collettività\\. Il modello matematico produce un *Expected Base Rating* \\(voto del comitato\\) e un *Expected Value* \\(fantavoto proletario\\), premiando la produttività nei calci piazzati e nei rigori per i lavoratori più meritevoli\\.\n\n`;
- 
-    msg += `*2\\. Rendimento della Cooperativa Agricola \\(Rosa\\):*\n`;
-    msg += `Il punteggio totale previsto per la collettività è la somma dell'*Expected Value* degli 11 lavoratori ottimali schierati per raggiungere le quote di produzione stabilite dal modulo\\. Il nostro algoritmo statale sceglie scientificamente la formazione che massimizza il bene comune, bandendo l'individualismo capitalista\\.\n\n`;
- 
-    msg += `*3\\. Costo pianificato dello scambio:*\n`;
-    msg += `Il costo di un compagno è regolato dal calmiere statale\\. Qualsiasi plusvalenza privata derivante da scambi non autorizzati dal Comitato Centrale è considerata alto tradimento\\, valutiamo se lo scambio rispetta i principi di redistribuzione equa della ricchezza\\.`;
+    await sendMessage(chatId, msg);
+}
 
+async function handleInfo(chatId: number) {
+    let msg = `⚙️ *Dossier Tecnico: L'Infrastruttura di Stato \\(API\\)* ⚙️\n\n`;
+    msg += `L'applicazione centrale \\(API\\) funziona come l'apparato burocratico perfetto, distribuendo le risorse secondo le necessità di ogni compagno, senza favoritismi borghesi\\.\n\n`;
+    msg += `*1\\. Raccolta Dati \\(Web Scraping\\)*\nI nostri ispettori statali prelevano quotidianamente i dati dalle fonti ufficiali, espropriando le statistiche dei lavoratori del pallone per inserirle nei nostri archivi centrali\\.\n\n`;
+    msg += `*2\\. Modello Matematico di Valutazione*\nIl calcolatore centrale di Mosca analizza le prestazioni\\. Nessun voto è lasciato al caso o all'interpretazione borghese\\. Si assegna un "Expected Base Rating" \\(Voto di Stato\\) e un "Expected Value" \\(Fanta\\-Valore\\), aggiungendo bonus per i lavoratori specializzati in calci piazzati e rigori\\.\n\n`;
+    msg += `*3\\. Pianificazione Formazione \\(Lineup\\)*\nIl sistema utilizza la programmazione lineare per schierare i compagni più produttivi\\. Non puoi scegliere la formazione: è lo Stato che sceglie la formazione migliore per te, rispettando i limiti strutturali \\(il modulo\\)\\.\n\n`;
+    msg += `*4\\. Gestione delle Transazioni*\nOgni acquisto o scambio è registrato nel registro centrale \\(Database Relazionale\\)\\. Qualsiasi tentativo di accumulare crediti in modo illecito viene bloccato dal KGB\\.\n\n`;
+    msg += `Gloria all'algoritmo\\!`;
+    
     await sendMessage(chatId, msg);
 }
