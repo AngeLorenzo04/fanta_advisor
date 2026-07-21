@@ -99,9 +99,38 @@ export async function POST() {
         const content = await page.content();
         const $ = cheerio.load(content);
 
+function cleanPlayerName(raw: string): string {
+  if (!raw) return "";
+  let cleaned = raw.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const words = cleaned.split(' ');
+  
+  if (words.length >= 2 && words.every(w => w.toLowerCase() === words[0].toLowerCase())) {
+    return words[0];
+  }
+  if (words.length >= 3 && words.length % 3 === 0) {
+    const unitSize = words.length / 3;
+    const unit1 = words.slice(0, unitSize).join(' ');
+    const unit2 = words.slice(unitSize, unitSize * 2).join(' ');
+    const unit3 = words.slice(unitSize * 2).join(' ');
+    if (unit1.toLowerCase() === unit2.toLowerCase() && unit2.toLowerCase() === unit3.toLowerCase()) {
+      return unit1;
+    }
+  }
+  if (words.length >= 2 && words.length % 2 === 0) {
+    const unitSize = words.length / 2;
+    const unit1 = words.slice(0, unitSize).join(' ');
+    const unit2 = words.slice(unitSize).join(' ');
+    if (unit1.toLowerCase() === unit2.toLowerCase()) {
+      return unit1;
+    }
+  }
+  return cleaned;
+}
+
         const playersToSave: any[] = [];
         $('tr.player-row').each((_, row) => {
-            const name = $(row).find('.player-name span').text().trim();
+            const rawName = $(row).find('.player-name a.name, a.name, .player-name span, .player-name').first().text().trim();
+            const name = cleanPlayerName(rawName);
             if (!name) return;
 
             const role = $(row).attr('data-filter-role-classic')?.toUpperCase() || 'C';

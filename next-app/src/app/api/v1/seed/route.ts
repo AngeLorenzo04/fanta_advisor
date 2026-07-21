@@ -23,6 +23,34 @@ function mapTeamAbbreviation(abbr: string): string {
   return map[abbr] || (abbr ? abbr.charAt(0).toUpperCase() + abbr.slice(1).toLowerCase() : "Svincolato");
 }
 
+function cleanPlayerName(raw: string): string {
+  if (!raw) return "";
+  let cleaned = raw.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const words = cleaned.split(' ');
+  
+  if (words.length >= 2 && words.every(w => w.toLowerCase() === words[0].toLowerCase())) {
+    return words[0];
+  }
+  if (words.length >= 3 && words.length % 3 === 0) {
+    const unitSize = words.length / 3;
+    const unit1 = words.slice(0, unitSize).join(' ');
+    const unit2 = words.slice(unitSize, unitSize * 2).join(' ');
+    const unit3 = words.slice(unitSize * 2).join(' ');
+    if (unit1.toLowerCase() === unit2.toLowerCase() && unit2.toLowerCase() === unit3.toLowerCase()) {
+      return unit1;
+    }
+  }
+  if (words.length >= 2 && words.length % 2 === 0) {
+    const unitSize = words.length / 2;
+    const unit1 = words.slice(0, unitSize).join(' ');
+    const unit2 = words.slice(unitSize).join(' ');
+    if (unit1.toLowerCase() === unit2.toLowerCase()) {
+      return unit1;
+    }
+  }
+  return cleaned;
+}
+
 function calculatePlayerStats(name: string, role: string, currentQuote: number, fvm: number = 0) {
   let expectedBaseRating = role === 'P' ? 6.0 : role === 'C' ? 5.9 : role === 'A' ? 6.1 : 5.8;
   expectedBaseRating += Math.min(0.8, (currentQuote || fvm || 1) / 50.0);
@@ -129,7 +157,8 @@ export async function POST() {
         const $ = cheerio.load(html);
 
         $('tr.player-row, .player-item, tr[data-id]').each((_, row) => {
-          const name = $(row).find('.player-name span, .player-name, a.name').text().trim();
+          const rawName = $(row).find('a.name, .player-name span, .player-name').first().text().trim();
+          const name = cleanPlayerName(rawName);
           if (!name) return;
 
           const role = ($(row).attr('data-filter-role-classic') || $(row).find('.role').text().trim()).toUpperCase().charAt(0) || 'C';
