@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GET /api/v1/draft/purchases
+// (Opzionale: se serve un listing, altrimenti usiamo il POST esistente)
+
+// POST /api/v1/draft/purchases
+// Creazione di un singolo acquisto
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -14,7 +19,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Il prezzo minimo deve essere di 1 credito' }, { status: 400 });
     }
 
-    // Usiamo una transaction per garantire la consistenza
     const purchase = await prisma.$transaction(async (tx) => {
       const player = await tx.player.findUnique({ where: { id: playerId } });
       if (!player) throw new Error('Giocatore non trovato');
@@ -63,5 +67,45 @@ export async function POST(request: Request) {
     return NextResponse.json(purchase, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+}
+
+// DELETE /api/v1/draft/purchases
+// Eliminazione di tutte le rose (rimozione di tutti i purchases e reset budget mister)
+export async function DELETE() {
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Elimina tutti i purchases
+      await tx.purchase.deleteMany({});
+
+      // 2. Reset dei budget rimanenti di tutti i mister al budget iniziale (500)
+      await tx.auctionParticipant.updateMany({
+        data: {
+          remainingBudget: 500
+        }
+      });
+
+      // 3. Reset dei prezzi correnti dei giocatori alle loro quotazioni iniziali
+      await tx.player.updateMany({
+        data: {
+          currentQuote: 1 // reset di sicurezza
+        }
+      });
+      
+      // Ripristiniamo la quotazione iniziale se presente
+      const players = await tx.player.findMany({ select: { id: true, initialQuote: true } });
+      for (const p of players) {
+        await tx.player.update({
+          where: { id: p.id },
+          data: {
+            currentQuote: p.initialQuote ?? 1
+          }
+        });
+      }
+    });
+
+    return NextResponse.json({ message: 'Tutte le rose sono state cancellate e i budget resettati.' });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
