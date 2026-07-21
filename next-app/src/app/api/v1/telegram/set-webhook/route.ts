@@ -2,11 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
     const url = new URL(request.url);
-    const webhookUrl = url.searchParams.get('url');
-
-    if (!webhookUrl) {
-        return NextResponse.json({ error: "Please provide a ?url= query parameter with the full URL to the webhook endpoint (e.g. https://yourdomain.com/api/v1/telegram/webhook)" }, { status: 400 });
-    }
+    // If no ?url= param, default to this server's own webhook endpoint
+    const webhookUrl = url.searchParams.get('url')
+        ?? `${url.origin}/api/v1/telegram/webhook`;
 
     const TELEGRAM_API_URL = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 
