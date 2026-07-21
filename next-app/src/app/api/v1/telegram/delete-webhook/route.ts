@@ -11,7 +11,7 @@ export async function GET(request: Request) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: process.env.TELEGRAM_GROUP_CHAT_ID,
-                    text: '😴 *Fanta Advisor Bot Disattivato*\n\nIl bot è stato spento e non risponderà più ai comandi.',
+                    text: '😴 *Breznev Bot Disattivato*\n\nIl bot è stato spento e non risponderà più ai comandi.',
                     parse_mode: 'Markdown'
                 })
             });

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         } else if (text.startsWith('/id')) {
             await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
-            await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team, /exchange, /mister o /rule per il regolamento\\.");
+            await sendMessage(chatId, "Benvenuto sotto la guida del Breznev Bot\\! I tuoi giocatori appartengono al popolo e le loro statistiche sono di proprietà dello Stato\\. Usa /best\\_team, /exchange, /mister o /rule per consultare il Piano Quinquennale\\.");
         } else if (text.startsWith('/')) {
             const rawCmd = text.split(' ')[0].replace('/', '').replace(/@.*$/, '').toLowerCase();
             const customCmd = await (prisma as any).customCommand.findUnique({ where: { name: rawCmd } });
@@ -191,29 +191,29 @@ async function handleMisterList(chatId: number) {
             return;
         }
 
-        let msg = `👤 *Lista Mister Fanta Advisor* 👤\n\n`;
+        let msg = `👤 *Lista dei Compagni Mister registrati al PCUS* 👤\n\n`;
         participants.forEach(p => {
-            msg += `ID: *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
+            msg += `ID di Partito: *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
         });
         
         await sendMessage(chatId, msg);
     } catch (e) {
         console.error("Error fetching mister list:", e);
-        await sendMessage(chatId, "Errore interno nel recuperare la lista\\.");
+        await sendMessage(chatId, "Il KGB ha intercettato un errore nel recupero della lista Compagni\\.");
     }
 }
 
 async function handleRule(chatId: number) {
-    let msg = `📘 *Regolamento Calcoli Fanta Advisor* 📘\n\n`;
+    let msg = `📘 *Piano Quinquennale di Calcolo Breznev* 📘\n\n`;
     
-    msg += `*1\\. Punteggi dei singoli giocatori:*\n`;
-    msg += `Vengono calcolati utilizzando un modello statistico basato sullo storico del giocatore, le presenze stimate e le statistiche previste per l'anno in corso\\. Il modello genera un *Expected Base Rating* \\(voto base\\) e un *Expected Value* \\(fantavoto medio previsto\\), tenendo conto di eventuali bonus per rigori e punizioni se il giocatore è uno specialista\\.\n\n`;
-
-    msg += `*2\\. Punteggio apportato alla rosa:*\n`;
-    msg += `Il punteggio totale previsto per una rosa è la somma dell'*Expected Value* degli 11 giocatori ottimali scelti dall'algoritmo per massimizzare il punteggio in base al modulo selezionato\\. L'algoritmo valuta tutte le combinazioni legali e sceglie la formazione che matematicamente garantisce il ritorno medio più alto\\.\n\n`;
-
-    msg += `*3\\. Costo ideale da spendere:*\n`;
-    msg += `Il costo ideale di un giocatore \\(Quota Attuale/Valore\\) è una proiezione basata sul mercato reale incrociata con l'efficienza del giocatore\\. Viene calcolato per valutare se uno scambio è "conveniente" per i crediti spesi in proporzione ai bonus attesi\\.`;
+    msg += `*1\\. Punteggi dei singoli compagni:*\n`;
+    msg += `Vengono calcolati espropriando le statistiche individuali a favore della collettività\\. Il modello matematico produce un *Expected Base Rating* \\(voto del comitato\\) e un *Expected Value* \\(fantavoto proletario\\), premiando la produttività nei calci piazzati e nei rigori per i lavoratori più meritevoli\\.\n\n`;
+ 
+    msg += `*2\\. Rendimento della Cooperativa Agricola \\(Rosa\\):*\n`;
+    msg += `Il punteggio totale previsto per la collettività è la somma dell'*Expected Value* degli 11 lavoratori ottimali schierati per raggiungere le quote di produzione stabilite dal modulo\\. Il nostro algoritmo statale sceglie scientificamente la formazione che massimizza il bene comune, bandendo l'individualismo capitalista\\.\n\n`;
+ 
+    msg += `*3\\. Costo pianificato dello scambio:*\n`;
+    msg += `Il costo di un compagno è regolato dal calmiere statale\\. Qualsiasi plusvalenza privata derivante da scambi non autorizzati dal Comitato Centrale è considerata alto tradimento\\, valutiamo se lo scambio rispetta i principi di redistribuzione equa della ricchezza\\.`;
 
     await sendMessage(chatId, msg);
 }

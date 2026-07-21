@@ -19,7 +19,7 @@ async function handleCronJob(request: Request) {
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
+
     // 1. Scrape latest probable lineups
     const lineupsRes = await fetch(`${baseUrl}/api/v1/scraper/lineups`, { method: 'POST' });
     const lineupsData = await lineupsRes.json();
@@ -27,15 +27,15 @@ async function handleCronJob(request: Request) {
     // 2. Optional: Notify Telegram group
     const chatId = process.env.TELEGRAM_GROUP_CHAT_ID;
     if (chatId) {
-      const msg = `📊 *FANTA ADVISOR \\- AGGIORNAMENTO GIORNATA* 📊\n\n` +
+      const msg = `📊 *BREZNEV \\- AGGIORNAMENTO GIORNATA* 📊\n\n` +
         `Sono stati aggiornati i punteggi attesi e la titolarità dei giocatori per la prossima giornata\\!\n\n` +
-        `💡 Usa il comando /best\\_team per calcolare subito la tua formazione ottimale\\.`;
+        `💡 Usa il comando /best\\_team per calcolare subito la tua formazione ottimale, il bene della comunità prima di tutto!\\.`;
       await sendMessage(chatId, msg);
     }
 
     return NextResponse.json({
       success: true,
-      message: "Cron job eseguito con successo!",
+      message: "Cron comunist job eseguito con successo!",
       lineupsData,
       telegramNotificationSent: Boolean(chatId),
       timestamp: new Date().toISOString()

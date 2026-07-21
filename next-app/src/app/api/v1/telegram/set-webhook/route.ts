@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: process.env.TELEGRAM_GROUP_CHAT_ID,
-                    text: '🤖 *Fanta Advisor Bot Attivato!*\n\nIl bot è ora online e in ascolto per i comandi.',
+                    text: '🤖 *Breznev Bot Attivato!*\n\nIl bot è ora online e in ascolto per i comandi.',
                     parse_mode: 'Markdown'
                 })
             });
