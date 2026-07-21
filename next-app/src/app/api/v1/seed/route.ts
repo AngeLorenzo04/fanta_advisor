@@ -94,16 +94,16 @@ const SEED_PARTICIPANTS = [
 ];
 
 const SEED_FIXTURES = [
-  { homeTeam: "Inter", awayTeam: "Lecce", homeTeamStrength: 5, awayTeamStrength: 2 },
-  { homeTeam: "Juventus", awayTeam: "Como", homeTeamStrength: 5, awayTeamStrength: 2 },
-  { homeTeam: "Milan", awayTeam: "Torino", homeTeamStrength: 5, awayTeamStrength: 3 },
-  { homeTeam: "Napoli", awayTeam: "Bologna", homeTeamStrength: 5, awayTeamStrength: 3 },
-  { homeTeam: "Roma", awayTeam: "Empoli", homeTeamStrength: 4, awayTeamStrength: 2 },
-  { homeTeam: "Lazio", awayTeam: "Venezia", homeTeamStrength: 4, awayTeamStrength: 1 },
+  { homeTeam: "Inter", awayTeam: "Monza", homeTeamStrength: 5, awayTeamStrength: 3 },
+  { homeTeam: "Juventus", awayTeam: "Parma", homeTeamStrength: 5, awayTeamStrength: 2 },
+  { homeTeam: "Milan", awayTeam: "Venezia", homeTeamStrength: 5, awayTeamStrength: 1 },
+  { homeTeam: "Napoli", awayTeam: "Cagliari", homeTeamStrength: 5, awayTeamStrength: 2 },
+  { homeTeam: "Roma", awayTeam: "Udinese", homeTeamStrength: 4, awayTeamStrength: 2 },
+  { homeTeam: "Lazio", awayTeam: "Verona", homeTeamStrength: 4, awayTeamStrength: 2 },
   { homeTeam: "Atalanta", awayTeam: "Fiorentina", homeTeamStrength: 5, awayTeamStrength: 4 },
-  { homeTeam: "Cagliari", awayTeam: "Genoa", homeTeamStrength: 2, awayTeamStrength: 3 },
-  { homeTeam: "Parma", awayTeam: "Udinese", homeTeamStrength: 2, awayTeamStrength: 2 },
-  { homeTeam: "Verona", awayTeam: "Monza", homeTeamStrength: 2, awayTeamStrength: 3 },
+  { homeTeam: "Pisa", awayTeam: "Sassuolo", homeTeamStrength: 2, awayTeamStrength: 3 },
+  { homeTeam: "Bologna", awayTeam: "Genoa", homeTeamStrength: 3, awayTeamStrength: 3 },
+  { homeTeam: "Torino", awayTeam: "Empoli", homeTeamStrength: 3, awayTeamStrength: 2 },
 ];
 
 export async function POST() {
@@ -222,14 +222,12 @@ export async function POST() {
       }
     }
 
-    // 5. Ensure default Match Fixtures exist
-    const currentFixturesCount = await prisma.matchFixture.count();
-    if (currentFixturesCount === 0) {
-      await prisma.matchFixture.createMany({
-        data: SEED_FIXTURES,
-      });
-      fixturesCreated = SEED_FIXTURES.length;
-    }
+    // 5. Ensure Match Fixtures are updated to latest matchday schedule
+    await prisma.matchFixture.deleteMany({});
+    await prisma.matchFixture.createMany({
+      data: SEED_FIXTURES,
+    });
+    fixturesCreated = SEED_FIXTURES.length;
 
     return NextResponse.json({
       success: true,
