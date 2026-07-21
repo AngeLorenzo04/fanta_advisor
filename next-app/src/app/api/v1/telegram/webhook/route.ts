@@ -25,10 +25,12 @@ export async function POST(request: Request) {
             await handleExchange(chatId, text);
         } else if (text.startsWith('/mister')) {
             await handleMisterList(chatId);
+        } else if (text.startsWith('/rule')) {
+            await handleRule(chatId);
         } else if (text.startsWith('/id')) {
             await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
-            await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team \\[ID\\] o /exchange \\[ID1\\] \\[Nome1\\] \\[ID2\\] \\[Nome2\\]");
+            await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team, /exchange, /mister o /rule per il regolamento\\.");
         }
 
         return NextResponse.json({ success: true });
@@ -193,4 +195,19 @@ async function handleMisterList(chatId: number) {
         console.error("Error fetching mister list:", e);
         await sendMessage(chatId, "Errore interno nel recuperare la lista\\.");
     }
+}
+
+async function handleRule(chatId: number) {
+    let msg = `📘 *Regolamento Calcoli Fanta Advisor* 📘\n\n`;
+    
+    msg += `*1\\. Punteggi dei singoli giocatori:*\n`;
+    msg += `Vengono calcolati utilizzando un modello statistico basato sullo storico del giocatore, le presenze stimate e le statistiche previste per l'anno in corso\\. Il modello genera un *Expected Base Rating* \\(voto base\\) e un *Expected Value* \\(fantavoto medio previsto\\), tenendo conto di eventuali bonus per rigori e punizioni se il giocatore è uno specialista\\.\n\n`;
+
+    msg += `*2\\. Punteggio apportato alla rosa:*\n`;
+    msg += `Il punteggio totale previsto per una rosa è la somma dell'*Expected Value* degli 11 giocatori ottimali scelti dall'algoritmo per massimizzare il punteggio in base al modulo selezionato\\. L'algoritmo valuta tutte le combinazioni legali e sceglie la formazione che matematicamente garantisce il ritorno medio più alto\\.\n\n`;
+
+    msg += `*3\\. Costo ideale da spendere:*\n`;
+    msg += `Il costo ideale di un giocatore \\(Quota Attuale/Valore\\) è una proiezione basata sul mercato reale incrociata con l'efficienza del giocatore\\. Viene calcolato per valutare se uno scambio è "conveniente" per i crediti spesi in proporzione ai bonus attesi\\.`;
+
+    await sendMessage(chatId, msg);
 }

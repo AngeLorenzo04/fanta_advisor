@@ -19,7 +19,8 @@ export async function GET(request: Request) {
         const commands = [
             { command: 'best_team', description: 'Ottieni la miglior formazione per un mister' },
             { command: 'exchange', description: 'Analizza uno scambio tra mister' },
-            { command: 'mister', description: 'Elenca tutti i mister e i loro ID' }
+            { command: 'mister', description: 'Elenca tutti i mister e i loro ID' },
+            { command: 'rule', description: 'Spiega come vengono calcolati i punteggi e i costi' }
         ];
 
         const resCommands = await fetch(`${TELEGRAM_API_URL}/setMyCommands`, {
