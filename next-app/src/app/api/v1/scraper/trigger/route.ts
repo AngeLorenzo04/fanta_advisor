@@ -28,6 +28,24 @@ function mapTeamAbbreviation(abbr: string) {
     return map[abbr] || (abbr ? abbr.charAt(0).toUpperCase() + abbr.slice(1).toLowerCase() : "Svincolato");
 }
 
+function cleanPlayerName(raw: string): string {
+  if (!raw) return "";
+  const cleaned = raw.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const words = cleaned.split(' ');
+  for (const divisor of [3, 2]) {
+    if (words.length >= divisor && words.length % divisor === 0) {
+      const unitSize = words.length / divisor;
+      const units = Array.from({ length: divisor }, (_, i) =>
+        words.slice(i * unitSize, (i + 1) * unitSize).join(' ')
+      );
+      if (units.every(u => u.toLowerCase() === units[0].toLowerCase())) {
+        return units[0];
+      }
+    }
+  }
+  return cleaned;
+}
+
 function calculatePlayerStats(name: string, role: string, fvm: number) {
     let expectedBaseRating = role === 'P' ? 6.0 : role === 'C' ? 5.9 : role === 'A' ? 6.1 : 5.8;
     expectedBaseRating += Math.min(0.8, fvm / 500.0);
@@ -99,37 +117,11 @@ export async function POST() {
         const content = await page.content();
         const $ = cheerio.load(content);
 
-function cleanPlayerName(raw: string): string {
-  if (!raw) return "";
-  let cleaned = raw.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
-  const words = cleaned.split(' ');
-  
-  if (words.length >= 2 && words.every(w => w.toLowerCase() === words[0].toLowerCase())) {
-    return words[0];
-  }
-  if (words.length >= 3 && words.length % 3 === 0) {
-    const unitSize = words.length / 3;
-    const unit1 = words.slice(0, unitSize).join(' ');
-    const unit2 = words.slice(unitSize, unitSize * 2).join(' ');
-    const unit3 = words.slice(unitSize * 2).join(' ');
-    if (unit1.toLowerCase() === unit2.toLowerCase() && unit2.toLowerCase() === unit3.toLowerCase()) {
-      return unit1;
-    }
-  }
-  if (words.length >= 2 && words.length % 2 === 0) {
-    const unitSize = words.length / 2;
-    const unit1 = words.slice(0, unitSize).join(' ');
-    const unit2 = words.slice(unitSize).join(' ');
-    if (unit1.toLowerCase() === unit2.toLowerCase()) {
-      return unit1;
-    }
-  }
-  return cleaned;
-}
-
         const playersToSave: any[] = [];
         $('tr.player-row').each((_, row) => {
-            const rawName = $(row).find('.player-name a.name, a.name, .player-name span, .player-name').first().text().trim();
+            // Use the most specific selector to avoid concatenated nested text
+            const nameEl = $(row).find('a.name').first();
+            const rawName = nameEl.length ? nameEl.text() : $(row).find('.player-name').clone().children().remove().end().text();
             const name = cleanPlayerName(rawName);
             if (!name) return;
 

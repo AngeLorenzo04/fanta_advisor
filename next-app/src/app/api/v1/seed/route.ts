@@ -168,7 +168,10 @@ export async function POST() {
         const $ = cheerio.load(html);
 
         $('tr.player-row, .player-item, tr[data-id]').each((_, row) => {
-          const rawName = $(row).find('a.name, .player-name span, .player-name').first().text().trim();
+          const nameEl = $(row).find('a.name').first();
+          const rawName = nameEl.length
+            ? nameEl.text()
+            : $(row).find('.player-name').clone().children().remove().end().text();
           const name = cleanPlayerName(rawName);
           if (!name) return;
 
