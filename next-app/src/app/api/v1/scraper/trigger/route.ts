@@ -147,10 +147,11 @@ export async function POST() {
 
         let playersLoaded = 0;
         if (playersToSave.length > 0) {
-            // Deduplicate players by name
+            // Deduplicate players by name + team
             const uniquePlayersMap = new Map();
             for (const p of playersToSave) {
-                uniquePlayersMap.set(p.name.toLowerCase().trim(), p);
+                const key = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
+                uniquePlayersMap.set(key, p);
             }
             const uniquePlayersToSave = Array.from(uniquePlayersMap.values());
 
@@ -158,17 +159,17 @@ export async function POST() {
             const existingPlayers = await prisma.player.findMany();
             const existingMap = new Map();
             for (const p of existingPlayers) {
-                existingMap.set(p.name.toLowerCase().trim(), p.id);
+                const key = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
+                existingMap.set(key, p.id);
             }
 
             for (const p of uniquePlayersToSave) {
-                const lowerName = p.name.toLowerCase().trim();
-                const id = existingMap.get(lowerName);
+                const nameKey = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
+                const id = existingMap.get(nameKey);
                 if (id) {
                     await prisma.player.update({
                         where: { id },
                         data: {
-                            team: p.team,
                             role: p.role,
                             initialQuote: p.initialQuote,
                             currentQuote: p.currentQuote,
@@ -201,7 +202,7 @@ export async function POST() {
                         }
                     });
                     // Add the newly created player to existingMap so subsequent identical names are ignored or updated
-                    existingMap.set(lowerName, newPlayer.id);
+                    existingMap.set(nameKey, newPlayer.id);
                 }
             }
             playersLoaded = uniquePlayersToSave.length;

@@ -204,7 +204,8 @@ export async function POST() {
     const existingPlayers = await prisma.player.findMany();
     const existingPlayersMap = new Map<string, number>();
     for (const p of existingPlayers) {
-      existingPlayersMap.set(p.name.toLowerCase().trim(), p.id);
+      const key = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
+      existingPlayersMap.set(key, p.id);
     }
 
     // 3. Fast Parallel Batch Upsert into DB
@@ -212,7 +213,7 @@ export async function POST() {
     const updatePromises: any[] = [];
 
     for (const p of playersToSave) {
-      const nameKey = p.name.toLowerCase().trim();
+      const nameKey = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
       const existingId = existingPlayersMap.get(nameKey);
 
       const playerData = {

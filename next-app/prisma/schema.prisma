@@ -25,6 +25,7 @@ model Player {
   isSetPieceSpecialist         Boolean?  @map("is_set_piece_specialist")
   Purchase                     Purchase?
 
+  @@unique([name, team])
   @@map("players")
 }
 
