@@ -114,44 +114,47 @@ export async function POST() {
     let participantsCreated = 0;
     let fixturesCreated = 0;
 
-    // 1. Fetch live page from Fantacalcio.it
-    const response = await fetch("https://www.fantacalcio.it/quotazioni-fantacalcio", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-      },
-      next: { revalidate: 3600 }
-    });
-
+    // 1. Fetch live page from Fantacalcio.it with fast 3s timeout
     const playersToSave: any[] = [];
-
-    if (response.ok) {
-      const html = await response.text();
-      const $ = cheerio.load(html);
-
-      $('tr.player-row, .player-item, tr[data-id]').each((_, row) => {
-        const name = $(row).find('.player-name span, .player-name, a.name').text().trim();
-        if (!name) return;
-
-        const role = ($(row).attr('data-filter-role-classic') || $(row).find('.role').text().trim()).toUpperCase().charAt(0) || 'C';
-        const teamAbbr = $(row).find('.player-team, .team').text().trim().toUpperCase();
-        const team = mapTeamAbbreviation(teamAbbr);
-
-        const initialQuoteStr = $(row).find('.player-classic-initial-price, .initial-price').text().trim();
-        const currentQuoteStr = $(row).find('.player-classic-current-price, .current-price').text().trim();
-        const fvmStr = $(row).find('.player-classic-fvm, .fvm').text().trim();
-
-        const initialQuote = initialQuoteStr ? parseInt(initialQuoteStr) : 1;
-        const currentQuote = currentQuoteStr ? parseInt(currentQuoteStr) : initialQuote;
-        const fvm = fvmStr ? parseInt(fvmStr) : 0;
-
-        const stats = calculatePlayerStats(name, role, currentQuote, fvm);
-
-        playersToSave.push({
-          name, team, role, initialQuote, currentQuote, fvm,
-          ...stats
-        });
+    try {
+      const response = await fetch("https://www.fantacalcio.it/quotazioni-fantacalcio", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        signal: AbortSignal.timeout(3000),
       });
-      scrapedPlayersCount = playersToSave.length;
+
+      if (response.ok) {
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        $('tr.player-row, .player-item, tr[data-id]').each((_, row) => {
+          const name = $(row).find('.player-name span, .player-name, a.name').text().trim();
+          if (!name) return;
+
+          const role = ($(row).attr('data-filter-role-classic') || $(row).find('.role').text().trim()).toUpperCase().charAt(0) || 'C';
+          const teamAbbr = $(row).find('.player-team, .team').text().trim().toUpperCase();
+          const team = mapTeamAbbreviation(teamAbbr);
+
+          const initialQuoteStr = $(row).find('.player-classic-initial-price, .initial-price').text().trim();
+          const currentQuoteStr = $(row).find('.player-classic-current-price, .current-price').text().trim();
+          const fvmStr = $(row).find('.player-classic-fvm, .fvm').text().trim();
+
+          const initialQuote = initialQuoteStr ? parseInt(initialQuoteStr) : 1;
+          const currentQuote = currentQuoteStr ? parseInt(currentQuoteStr) : initialQuote;
+          const fvm = fvmStr ? parseInt(fvmStr) : 0;
+
+          const stats = calculatePlayerStats(name, role, currentQuote, fvm);
+
+          playersToSave.push({
+            name, team, role, initialQuote, currentQuote, fvm,
+            ...stats
+          });
+        });
+        scrapedPlayersCount = playersToSave.length;
+      }
+    } catch (e) {
+      console.log("Fantacalcio live fetch skipped/timed out, serving database records.");
     }
 
     // 2. Fetch existing players from DB to prevent duplicates
