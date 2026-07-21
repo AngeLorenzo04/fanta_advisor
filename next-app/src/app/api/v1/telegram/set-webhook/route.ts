@@ -1,10 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const url = new URL(request.url);
+
+    // Resolve the public-facing origin using proxy headers (Render injects these)
+    // Fallback: use NEXT_PUBLIC_API_BASE_URL env var, or url.origin as last resort
+    const host = request.headers.get('x-forwarded-host') ?? url.hostname;
+    const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const publicOrigin = process.env.NEXT_PUBLIC_API_BASE_URL
+        ? process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/v1\/?$/, '')
+        : `${proto}://${host}`;
+
     // If no ?url= param, default to this server's own webhook endpoint
     const webhookUrl = url.searchParams.get('url')
-        ?? `${url.origin}/api/v1/telegram/webhook`;
+        ?? `${publicOrigin}/api/v1/telegram/webhook`;
+
 
     const TELEGRAM_API_URL = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 
