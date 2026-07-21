@@ -160,9 +160,9 @@ async function handleExchange(chatId: number, text: string) {
         }
 
         if (diff > 0) {
-            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p1.name)}* \\(+${diff} in Valore rosa\\)\\.`;
+            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p1.name)}* \\(\\+${diff} in Valore rosa\\)\\.`;
         } else if (diff < 0) {
-            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p2.name)}* \\(+${Math.abs(diff)} in Valore rosa\\)\\.`;
+            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p2.name)}* \\(\\+${Math.abs(diff)} in Valore rosa\\)\\.`;
         } else {
             msg += `🤝 Lo scambio è *perfettamente equo* in termini di Valore\\!`;
         }
