@@ -31,6 +31,12 @@ export async function POST(request: Request) {
             await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
             await sendMessage(chatId, "Benvenuto nel Fanta Advisor Bot\\! Usa /best\\_team, /exchange, /mister o /rule per il regolamento\\.");
+        } else if (text.startsWith('/')) {
+            const rawCmd = text.split(' ')[0].replace('/', '').replace(/@.*$/, '').toLowerCase();
+            const customCmd = await (prisma as any).customCommand.findUnique({ where: { name: rawCmd } });
+            if (customCmd) {
+                await sendMessage(chatId, escapeMarkdown(customCmd.response));
+            }
         }
 
         return NextResponse.json({ success: true });

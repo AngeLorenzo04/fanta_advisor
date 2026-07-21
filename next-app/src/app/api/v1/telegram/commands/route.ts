@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const commands = await prisma.customCommand.findMany({
+    const commands = await (prisma as any).customCommand.findMany({
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(commands);
@@ -24,12 +24,12 @@ export async function POST(request: Request) {
     // Clean command name (strip leading /, lowercase, remove spaces)
     name = name.replace(/^\//, '').trim().toLowerCase().replace(/\s+/g, '_');
 
-    const existing = await prisma.customCommand.findUnique({ where: { name } });
+    const existing = await (prisma as any).customCommand.findUnique({ where: { name } });
     if (existing) {
       return NextResponse.json({ error: `Il comando /${name} esiste già!` }, { status: 400 });
     }
 
-    const newCommand = await prisma.customCommand.create({
+    const newCommand = await (prisma as any).customCommand.create({
       data: {
         name,
         description: description?.trim() || null,
