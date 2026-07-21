@@ -50,8 +50,13 @@ export async function POST() {
       const roleLimits: Record<string, number> = { P: 3, D: 8, C: 8, A: 6 };
 
       // Per ogni mister, proviamo ad assegnare la rosa
+      const newPurchases: any[] = [];
+      const playerUpdates: { id: number; cost: number }[] = [];
+      const participantUpdates: { id: number; budget: number }[] = [];
+
       for (const participant of participants) {
         let currentBudget = 500;
+        let assignedPlayers = 0;
 
         for (const role of ['P', 'D', 'C', 'A']) {
           const limit = roleLimits[role];
@@ -61,37 +66,56 @@ export async function POST() {
               throw new Error(`Giocatori insufficienti per il ruolo ${role}!`);
             }
 
-            // Costo casuale realistico (es. tra 1 e 30 crediti, limitato dal budget rimanente)
+            // Costo casuale realistico (es. tra 1 e 35 crediti, limitato dal budget rimanente)
             // Assicuriamoci di conservare almeno 1 credito per i futuri giocatori della rosa
-            const maxCost = Math.min(35, currentBudget - (25 - (k + 1))); 
+            const maxCost = Math.min(35, currentBudget - (25 - assignedPlayers - 1)); 
             const cost = Math.max(1, Math.floor(Math.random() * maxCost) + 1);
 
             currentBudget -= cost;
+            assignedPlayers++;
 
-            // Crea acquisto
-            await tx.purchase.create({
-              data: {
-                playerId: player.id,
-                participantId: participant.id,
-                price: cost
-              }
+            newPurchases.push({
+              playerId: player.id,
+              participantId: participant.id,
+              price: cost
             });
 
-            // Aggiorna quotazione corrente
-            await tx.player.update({
-              where: { id: player.id },
-              data: { currentQuote: cost }
-            });
+            playerUpdates.push({ id: player.id, cost });
           }
         }
 
-        // Salva il budget residuo finale del mister
-        await tx.auctionParticipant.update({
-          where: { id: participant.id },
-          data: { remainingBudget: currentBudget }
-        });
+        participantUpdates.push({ id: participant.id, budget: currentBudget });
       }
-    });
+
+      // Eseguiamo tutte le query in bulk/parallelo
+      if (newPurchases.length > 0) {
+        await tx.purchase.createMany({ data: newPurchases });
+      }
+
+      // Aggiorniamo le quotazioni dei giocatori in parallelo (chunking per sicurezza)
+      const chunkSize = 50;
+      for (let i = 0; i < playerUpdates.length; i += chunkSize) {
+        const chunk = playerUpdates.slice(i, i + chunkSize);
+        await Promise.all(
+          chunk.map((p) =>
+            tx.player.update({
+              where: { id: p.id },
+              data: { currentQuote: p.cost },
+            })
+          )
+        );
+      }
+
+      // Aggiorniamo i budget dei mister in parallelo
+      await Promise.all(
+        participantUpdates.map((p) =>
+          tx.auctionParticipant.update({
+            where: { id: p.id },
+            data: { remainingBudget: p.budget },
+          })
+        )
+      );
+    }, { timeout: 30000 });
 
     return NextResponse.json({ message: 'Assegnazione casuale delle rose completata con successo!' });
   } catch (error: any) {
