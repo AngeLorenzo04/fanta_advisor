@@ -86,22 +86,7 @@ export async function DELETE() {
       });
 
       // 3. Reset dei prezzi correnti dei giocatori alle loro quotazioni iniziali
-      await tx.player.updateMany({
-        data: {
-          currentQuote: 1 // reset di sicurezza
-        }
-      });
-      
-      // Ripristiniamo la quotazione iniziale se presente
-      const players = await tx.player.findMany({ select: { id: true, initialQuote: true } });
-      for (const p of players) {
-        await tx.player.update({
-          where: { id: p.id },
-          data: {
-            currentQuote: p.initialQuote ?? 1
-          }
-        });
-      }
+      await tx.$executeRaw`UPDATE players SET current_quote = COALESCE(initial_quote, 1)`;
     });
 
     return NextResponse.json({ message: 'Tutte le rose sono state cancellate e i budget resettati.' });
