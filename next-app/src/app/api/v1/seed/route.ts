@@ -161,47 +161,54 @@ export async function POST() {
       existingPlayersMap.set(p.name.toLowerCase().trim(), p.id);
     }
 
-    // 3. Upsert Players into DB
+    // 3. Fast Parallel Batch Upsert into DB
+    const toCreate: any[] = [];
+    const updatePromises: any[] = [];
+
     for (const p of playersToSave) {
       const nameKey = p.name.toLowerCase().trim();
       const existingId = existingPlayersMap.get(nameKey);
 
+      const playerData = {
+        name: p.name,
+        team: p.team,
+        role: p.role,
+        initialQuote: p.initialQuote,
+        currentQuote: p.currentQuote,
+        expectedValue: p.expectedValue,
+        expectedBaseRating: p.expectedBaseRating,
+        isOop: p.isOop ?? false,
+        oopIndex: p.oopIndex ?? 0,
+        isSetPieceSpecialist: p.setPieceSpecialist ?? false,
+        penaltyTakerPercentage: p.penalty ?? 0,
+      };
+
       if (existingId) {
-        await prisma.player.update({
-          where: { id: existingId },
-          data: {
-            team: p.team,
-            role: p.role,
-            initialQuote: p.initialQuote,
-            currentQuote: p.currentQuote,
-            expectedValue: p.expectedValue,
-            expectedBaseRating: p.expectedBaseRating,
-            isOop: p.isOop ?? false,
-            oopIndex: p.oopIndex ?? 0,
-            isSetPieceSpecialist: p.setPieceSpecialist ?? false,
-            penaltyTakerPercentage: p.penalty ?? 0,
-          },
-        });
+        updatePromises.push(
+          prisma.player.update({
+            where: { id: existingId },
+            data: playerData,
+          })
+        );
         playersUpdated++;
       } else {
-        const newP = await prisma.player.create({
-          data: {
-            name: p.name,
-            team: p.team,
-            role: p.role,
-            initialQuote: p.initialQuote,
-            currentQuote: p.currentQuote,
-            expectedValue: p.expectedValue,
-            expectedBaseRating: p.expectedBaseRating,
-            isOop: p.isOop ?? false,
-            oopIndex: p.oopIndex ?? 0,
-            isSetPieceSpecialist: p.setPieceSpecialist ?? false,
-            penaltyTakerPercentage: p.penalty ?? 0,
-          },
-        });
-        existingPlayersMap.set(nameKey, newP.id);
+        toCreate.push(playerData);
         playersCreated++;
       }
+    }
+
+    // Execute updates in parallel chunks of 50
+    const chunkSize = 50;
+    for (let i = 0; i < updatePromises.length; i += chunkSize) {
+      await Promise.all(updatePromises.slice(i, i + chunkSize));
+    }
+
+    // Execute bulk create for new players
+    if (toCreate.length > 0) {
+      await prisma.player.createMany({
+        data: toCreate,
+        skipDuplicates: true,
+      });
     }
 
     // 4. Ensure default Participants (Mister) exist
