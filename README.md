@@ -1,84 +1,79 @@
-# Fanta-Advisor 26/27 - Backend & Infrastructure
+# Fanta-Advisor 26/27
 
-Fanta-Advisor è un sistema distribuito progettato in Java (Spring Boot) per fornire un vantaggio analitico strategico nella stagione di Fantacalcio 2026/2027.
+Fanta-Advisor è un ecosistema completo (Frontend + Backend + Telegram Bot) progettato per fornire un vantaggio analitico strategico nella stagione di Fantacalcio 2026/2027.
+
+L'architettura originaria a microservizi Java è stata migrata e consolidata in un monolite moderno basato su **Next.js, TypeScript e Prisma ORM** per garantire maggiore rapidità di sviluppo e una singola codebase integrata.
 
 ---
 
 ## Struttura del Progetto
 
-Il progetto è strutturato come un monolite multi-modulo Maven orchestrato tramite container Docker:
+Il sistema è diviso in due repository principali:
 
-*   **`shared`**: Modulo comune contenente le entità JPA (`Player`, `AuctionParticipant`, `Purchase`) e i relativi repository di persistenza condivisi tra tutti i servizi.
-*   **`api-gateway`**: Espone le API RESTful `/api/v1` ed i WebSocket per la sincronizzazione real-time.
-*   **`solver-worker`**: Consuma i task asincroni da Redis per eseguire i calcoli analitici pesanti (solutore ILP e simulatore Monte Carlo) memorizzandoli nel DB.
-*   **`scraper-service`**: Esegue lo scraping periodico e manuale (Jsoup, Playwright Java) per caricare dati storici, quotazioni, notizie e heatmaps.
+1. **`next-app` (Backend & API Gateway)**
+   - *Framework*: Next.js (App Router), Prisma, PostgreSQL.
+   - Fornisce le API RESTful per gestire giocatori, squadre e acquisti (`/api/v1/...`).
+   - Contiene la logica per il **Bot Telegram** (Webhook ed elaborazione messaggi).
+   - Espone algoritmi per il calcolo della **miglior formazione ottimale**.
+   - Avvio: `npm run dev` (Porta di default: `3000`)
+
+2. **`frontend-fantaAdvisor` (Dashboard Frontend)**
+   - *Framework*: Next.js, React, TailwindCSS.
+   - Fornisce l'interfaccia utente (Dashboard, Asta Live, Rose, Valutazioni).
+   - Proxy configurato per instradare automaticamente le richieste API verso il backend.
+   - Avvio: `npm run dev -- -p 3001` (Porta: `3001`)
 
 ---
 
 ## Prerequisiti per lo Sviluppo
 
 Per sviluppare ed eseguire l'applicazione localmente, assicurati di avere installato:
-*   **Java JDK 17** (o superiore)
-*   **Maven 3.8+**
-*   **Docker & Docker Compose**
-*   Un IDE compatibile con Java (consigliato **IntelliJ IDEA** o **VS Code** con l'estensione Extension Pack for Java).
+*   **Node.js** (v18 o superiore)
+*   **npm** o **pnpm**
+*   **PostgreSQL** (locale o tramite Docker)
 
 ---
 
 ## Come Avviare l'Ambiente Locale
 
-### 1. Avvio Rapido con Docker Compose
-Dalla cartella principale del progetto, esegui il comando:
-
-```bash
-docker-compose up --build
-```
-
-Questo comando compilerà i sorgenti Java all'interno del container tramite un builder multi-stage Maven, avvierà un'istanza Redis ed un'istanza PostgreSQL locale configurando automaticamente le connessioni tra i moduli.
-
-*   **Swagger UI (API Gateway)**: http://localhost:8080/swagger-ui.html
-*   **Porta Database Postgres locale**: `5432` (Credenziali: `postgres` / `postgres`)
-*   **Porta Redis Broker**: `6379`
-*   **Servizio Scraper (Porta locale)**: `8082`
-*   **Servizio Solver (Porta locale)**: `8081`
-
-### 2. Come Testare il Sistema
-
-#### Test Automatici (JUnit)
-Per eseguire tutti i test unitari e di integrazione (inclusa la verifica del caricamento dei contesti Spring Boot e dello schema JPA):
-1. Spostati nella cartella `backend`:
-   ```bash
-   cd backend
-   ```
-2. Esegui il comando Maven:
-   ```bash
-   mvn test
-   ```
-
-#### Test Manuali ed Endpoint
-Una volta che l'ambiente Docker Compose è avviato, puoi testare il sistema nei seguenti modi:
-*   **Swagger UI**: Visita http://localhost:8080/swagger-ui.html nel browser per invocare gli endpoint REST disponibili (ad es. `/api/v1/health`).
-*   **Curl**:
-    ```bash
-    curl -i http://localhost:8080/api/v1/health
-    ```
-
-### 3. Sviluppo in Locale (IDE)
-Se preferisci lanciare l'applicazione direttamente dal tuo IDE (es. IntelliJ) per fare debugging:
-1.  Avvia solo i servizi di broker e database di supporto tramite Docker:
-    ```bash
-    docker-compose up -d redis db
-    ```
-2.  Importa il progetto Maven principale `backend/pom.xml` sul tuo IDE.
-3.  Esegui la classe principale `FantaGatewayApplication` nel modulo `api-gateway` o `FantaSolverApplication` nel modulo `solver-worker`. Le configurazioni locali di default cercheranno `localhost:6379` e `localhost:5432` connettendosi automaticamente.
-
----
-
-## Integrazione Cloud (Supabase)
-Per connettere l'applicazione al DB Cloud di Supabase anziché al Postgres locale, sovrascrivi le variabili d'ambiente nel file `.env` locale (non tracciato da git) o nel tuo ambiente operativo:
+### 1. Avvio del Database
+Assicurati che PostgreSQL sia in esecuzione e configura le variabili d'ambiente nel file `.env` all'interno della cartella `next-app`:
 
 ```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://<supabase-host>:5432/postgres
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=<your-supabase-password>
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fanta_db?schema=public"
+TELEGRAM_BOT_TOKEN="il_tuo_token_telegram"
+TELEGRAM_GROUP_CHAT_ID="id_del_gruppo"
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 ```
+
+Applica le migrazioni al database (se non già fatto):
+```bash
+cd next-app
+npx prisma db push
+```
+
+### 2. Avvio del Backend (API & Telegram Bot)
+```bash
+cd next-app
+npm install
+npm run dev
+```
+Il backend sarà raggiungibile su `http://localhost:3000`.
+
+### 3. Avvio del Frontend (Dashboard)
+In un nuovo terminale, avvia il frontend:
+```bash
+cd ../frontend-fantaAdvisor
+npm install
+npm run dev -- -p 3001
+```
+Il frontend sarà raggiungibile su `http://localhost:3001`.
+
+### 4. Collegamento del Bot Telegram (Webhook)
+Essendo il server in locale, Telegram richiede un URL pubblico per contattare il tuo webhook.
+1. Avvia localtunnel per esporre il backend:
+   ```bash
+   npx localtunnel --port 3000
+   ```
+2. Accedi alla Dashboard del frontend (`http://localhost:3001`), clicca sul pulsante **Bot Telegram** in alto a destra, e inserisci l'URL pubblico generato da localtunnel.
+3. Clicca su **Attiva** per collegare il bot al tuo server locale in un solo click.
