@@ -114,9 +114,9 @@ async function handleExchange(chatId: number, text: string) {
     }
 
     const id1 = parseInt(parts[1]);
-    const player1Name = parts[2].toLowerCase();
+    const player1Name = parts[2].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const id2 = parseInt(parts[3]);
-    const player2Name = parts[4].toLowerCase();
+    const player2Name = parts[4].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
     if (isNaN(id1) || isNaN(id2)) {
         await sendMessage(chatId, "Gli ID Mister devono essere numeri\\.");
@@ -132,15 +132,15 @@ async function handleExchange(chatId: number, text: string) {
             return;
         }
 
-        const bought1 = p1.purchases.find(p => p.player.name.toLowerCase().includes(player1Name));
-        const bought2 = p2.purchases.find(p => p.player.name.toLowerCase().includes(player2Name));
+        const bought1 = p1.purchases.find(p => p.player.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(player1Name));
+        const bought2 = p2.purchases.find(p => p.player.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(player2Name));
 
         if (!bought1) {
-            await sendMessage(chatId, `Il mister ${escapeMarkdown(p1.name)} non ha nessun giocatore chiamato ${escapeMarkdown(player1Name)}\\.`);
+            await sendMessage(chatId, `Il mister ${escapeMarkdown(p1.name)} non ha nessun giocatore chiamato ${escapeMarkdown(parts[2])}\\.`);
             return;
         }
         if (!bought2) {
-            await sendMessage(chatId, `Il mister ${escapeMarkdown(p2.name)} non ha nessun giocatore chiamato ${escapeMarkdown(player2Name)}\\.`);
+            await sendMessage(chatId, `Il mister ${escapeMarkdown(p2.name)} non ha nessun giocatore chiamato ${escapeMarkdown(parts[4])}\\.`);
             return;
         }
 
