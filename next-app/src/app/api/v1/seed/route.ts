@@ -12,8 +12,7 @@ const TEAM_STRENGTH: Record<string, number> = {
 
 function mapTeamAbbreviation(abbr: string): string {
   const map: Record<string, string> = {
-    "INT": "Inter", "MIL": "Milan", "JUV": "Juventu
-    s", "NAP": "Napoli",
+    "INT": "Inter", "MIL": "Milan", "JUV": "Juventus", "NAP": "Napoli",
     "ROM": "Roma", "LAZ": "Lazio", "ATA": "Atalanta", "FIO": "Fiorentina",
     "TOR": "Torino", "BOL": "Bologna", "MON": "Monza", "GEN": "Genoa",
     "PAR": "Parma", "EMP": "Empoli", "VER": "Verona", "UDI": "Udinese",
