@@ -33,12 +33,26 @@ function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
     modifier *= 0.8;
   }
 
+  // Starter probability (1.0 = starter, 0.5 = ballot, 0.0 = injured/suspended)
+  const starterChance = (player.penaltyTakerPercentage !== undefined && player.penaltyTakerPercentage !== null)
+    ? player.penaltyTakerPercentage
+    : 1.0;
+
   let expectedMatchScore = (player.expectedValue || 6.0) + modifier;
-  expectedMatchScore = Math.round(expectedMatchScore * 100.0) / 100.0;
+
+  // Adjust score by starter probability for matchday valuation
+  if (starterChance <= 0) {
+    expectedMatchScore = 0.0; // Out / Injured / Suspended
+  } else if (starterChance < 1.0) {
+    expectedMatchScore = expectedMatchScore * (0.5 + starterChance * 0.5); // Ballot adjustment
+  }
+
+  expectedMatchScore = Math.max(0, Math.round(expectedMatchScore * 100.0) / 100.0);
 
   return {
     player,
     matchModifier: modifier,
+    starterChance,
     expectedMatchScore,
     opponentTeam
   };
