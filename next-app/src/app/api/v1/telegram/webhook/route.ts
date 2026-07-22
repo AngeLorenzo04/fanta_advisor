@@ -189,7 +189,7 @@ async function handleBestTeam(chatId: number, text: string) {
     }
 
     if (!participant) {
-        await sendMessage(chatId, `Mister non trovato\\. Usa /mister per vedere la lista\\.`);
+        await sendMessage(chatId, `Compagno non trovato agli atti\\. Usa /mister per consultare l'archivio\\.`);
         return;
     }
 
@@ -199,20 +199,20 @@ async function handleBestTeam(chatId: number, text: string) {
         const data = await calculateOptimalLineup(misterId);
         
         if (!data || !data.starting11 || data.starting11.length === 0) {
-            await sendMessage(chatId, "Nessuna rosa valida trovata\\.");
+            await sendMessage(chatId, "Nessun collettivo proletario trovato\\.");
             return;
         }
 
-        let msg = `🏆 *Miglior Formazione per ${escapeMarkdown(participant.name)}* 🏆\n\n`;
-        msg += `📐 Modulo: *${escapeMarkdown(data.formation)}*\n`;
-        msg += `🎯 Voto Atteso: *${escapeMarkdown(data.totalProjectedScore.toFixed(2))}*\n\n`;
+        let msg = `☭ *Il Comitato Centrale ha decretato il seguente schieramento per il compagno ${escapeMarkdown(participant.name)}* ☭\n\n`;
+        msg += `📐 Assetto di Classe: *${escapeMarkdown(data.formation)}*\n`;
+        msg += `🏭 Quota di Produzione Attesa: *${escapeMarkdown(data.totalProjectedScore.toFixed(2))}*\n\n`;
         
-        msg += `*Titolari:*\n`;
+        msg += `*Compagni al Fronte:*\n`;
         data.starting11.forEach((p: any) => {
             msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
         });
 
-        msg += `\n*Panchina:*\n`;
+        msg += `\n*Riserve (Pronti all'Esproprio):*\n`;
         data.bench.forEach((p: any) => {
             msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
         });
@@ -222,14 +222,14 @@ async function handleBestTeam(chatId: number, text: string) {
     } catch (e: any) {
         console.error("Error fetching optimal lineup:", e);
         const errStr = e && e.message ? e.message : String(e);
-        await sendMessage(chatId, `Errore interno durante il calcolo: ${escapeMarkdown(errStr)}`);
+        await sendMessage(chatId, `Errore burocratico interno: ${escapeMarkdown(errStr)}`);
     }
 }
 
 async function handleExchange(chatId: number, text: string) {
     const parts = text.split(' ');
     if (parts.length < 5) {
-        await sendMessage(chatId, "Uso corretto: /exchange \\[ID\\_Mister1\\] \\[Giocatore1\\] \\[ID\\_Mister2\\] \\[Giocatore2\\]\nEs: /exchange 1 Lukaku 2 Lautaro");
+        await sendMessage(chatId, "Direttiva errata\\. Uso corretto: /exchange \\[ID\\_Compagno1\\] \\[Lavoratore1\\] \\[ID\\_Compagno2\\] \\[Lavoratore2\\]\nEs: /exchange 1 Lukaku 2 Lautaro");
         return;
     }
 
@@ -239,7 +239,7 @@ async function handleExchange(chatId: number, text: string) {
     const player2Name = parts[4].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
     if (isNaN(id1) || isNaN(id2)) {
-        await sendMessage(chatId, "Gli ID Mister devono essere numeri\\.");
+        await sendMessage(chatId, "I codici identificativi dei compagni devono essere numerici\\.");
         return;
     }
 
@@ -248,7 +248,7 @@ async function handleExchange(chatId: number, text: string) {
         const p2 = await prisma.auctionParticipant.findUnique({ where: { id: id2 }, include: { purchases: { include: { player: true } } } });
 
         if (!p1 || !p2) {
-            await sendMessage(chatId, "Uno dei mister non esiste\\.");
+            await sendMessage(chatId, "Uno dei compagni non risulta negli archivi statali\\.");
             return;
         }
 
@@ -256,11 +256,11 @@ async function handleExchange(chatId: number, text: string) {
         const bought2 = p2.purchases.find(p => p.player.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(player2Name));
 
         if (!bought1) {
-            await sendMessage(chatId, `Il mister ${escapeMarkdown(p1.name)} non ha nessun giocatore chiamato ${escapeMarkdown(parts[2])}\\.`);
+            await sendMessage(chatId, `Il compagno ${escapeMarkdown(p1.name)} non detiene i diritti sul lavoratore ${escapeMarkdown(parts[2])}\\.`);
             return;
         }
         if (!bought2) {
-            await sendMessage(chatId, `Il mister ${escapeMarkdown(p2.name)} non ha nessun giocatore chiamato ${escapeMarkdown(parts[4])}\\.`);
+            await sendMessage(chatId, `Il compagno ${escapeMarkdown(p2.name)} non detiene i diritti sul lavoratore ${escapeMarkdown(parts[4])}\\.`);
             return;
         }
 
@@ -271,27 +271,27 @@ async function handleExchange(chatId: number, text: string) {
         const val2 = g2.currentQuote || g2.initialQuote || 1;
         const diff = val2 - val1;
 
-        let msg = `⚖️ *Analisi Scambio* ⚖️\n\n`;
-        msg += `*${escapeMarkdown(p1.name)}* cede: ${g1.role} ${escapeMarkdown(g1.name)} \\(Valore: ${val1}\\)\n`;
-        msg += `*${escapeMarkdown(p2.name)}* cede: ${g2.role} ${escapeMarkdown(g2.name)} \\(Valore: ${val2}\\)\n\n`;
+        let msg = `⚖️ *Valutazione Ministeriale dell'Esproprio* ⚖️\n\n`;
+        msg += `*${escapeMarkdown(p1.name)}* dona allo stato: ${g1.role} ${escapeMarkdown(g1.name)} \\(Valore Produttivo: ${val1}\\)\n`;
+        msg += `*${escapeMarkdown(p2.name)}* dona allo stato: ${g2.role} ${escapeMarkdown(g2.name)} \\(Valore Produttivo: ${val2}\\)\n\n`;
 
         if (g1.role !== g2.role) {
-            msg += `⚠️ *Attenzione:* I ruoli sono diversi \\(${g1.role} vs ${g2.role}\\)\\. Lo scambio potrebbe invalidare i limiti della rosa\\!\n\n`;
+            msg += `⚠️ *Attenzione:* Le classi lavoratrici differiscono \\(${g1.role} vs ${g2.role}\\)\\. L'esproprio potrebbe violare il Piano Quinquennale\\!\n\n`;
         }
 
         if (diff > 0) {
-            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p1.name)}* \\(\\+${diff} in Valore rosa\\)\\.`;
+            msg += `📈 L'esproprio arricchisce ingiustamente il compagno *${escapeMarkdown(p1.name)}* \\(\\+${diff} in quota produttiva\\)\\.`;
         } else if (diff < 0) {
-            msg += `📈 L'affare conviene matematicamente a *${escapeMarkdown(p2.name)}* \\(\\+${Math.abs(diff)} in Valore rosa\\)\\.`;
+            msg += `📈 L'esproprio arricchisce ingiustamente il compagno *${escapeMarkdown(p2.name)}* \\(\\+${Math.abs(diff)} in quota produttiva\\)\\.`;
         } else {
-            msg += `🤝 Lo scambio è *perfettamente equo* in termini di Valore\\!`;
+            msg += `🤝 L'esproprio è *perfettamente comunista* ed equo per il Partito\\!`;
         }
 
         await sendMessage(chatId, msg);
 
     } catch (e) {
         console.error("Error handling exchange:", e);
-        await sendMessage(chatId, "Errore interno durante l'analisi dello scambio\\.");
+        await sendMessage(chatId, "Errore burocratico durante l'esproprio di Stato\\.");
     }
 }
 
