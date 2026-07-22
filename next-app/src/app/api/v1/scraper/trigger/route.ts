@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { chromium } from 'playwright';
 import * as cheerio from 'cheerio';
 
 const TEAM_STRENGTH: Record<string, number> = {
@@ -107,14 +106,18 @@ function calculatePlayerStats(name: string, role: string, fvm: number) {
 
 export async function POST() {
     try {
-        const browser = await chromium.launch({ headless: true });
-        const page = await browser.newPage();
-
         // Scrape players
-        console.log("Navigating to quotazioni-fantacalcio...");
-        await page.goto("https://www.fantacalcio.it/quotazioni-fantacalcio", { waitUntil: 'networkidle', timeout: 30000 });
-        await page.waitForTimeout(3000);
-        const content = await page.content();
+        console.log("Fetching quotazioni-fantacalcio...");
+        const response = await fetch("https://www.fantacalcio.it/quotazioni-fantacalcio", {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+        });
+        
+        if (!response.ok) {
+             throw new Error(`Failed to fetch players page: ${response.status}`);
+        }
+        const content = await response.text();
         const $ = cheerio.load(content);
 
         const playersToSave: any[] = [];
@@ -209,10 +212,16 @@ export async function POST() {
         }
 
         // Scrape fixtures
-        console.log("Navigating to serie-a/calendario per prendere le partite della 1° giornata...");
-        await page.goto("https://www.fantacalcio.it/serie-a/calendario", { waitUntil: 'networkidle', timeout: 30000 });
-        await page.waitForTimeout(2000);
-        const contentFix = await page.content();
+        console.log("Fetching serie-a/calendario per prendere le partite della 1° giornata...");
+        const fixResponse = await fetch("https://www.fantacalcio.it/serie-a/calendario", {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+        });
+        if (!fixResponse.ok) {
+             throw new Error(`Failed to fetch fixtures page: ${fixResponse.status}`);
+        }
+        const contentFix = await fixResponse.text();
         const $fix = cheerio.load(contentFix);
 
         const fixtures: any[] = [];
@@ -242,13 +251,11 @@ export async function POST() {
             });
         }
 
-        await browser.close();
-
         return NextResponse.json({
             status: 'success',
             players_loaded: playersLoaded,
             fixtures_loaded: currentFixtures.length,
-            source: 'playwright'
+            source: 'fetch-cheerio'
         });
     } catch (error: any) {
         console.error("Scraper Error:", error);
