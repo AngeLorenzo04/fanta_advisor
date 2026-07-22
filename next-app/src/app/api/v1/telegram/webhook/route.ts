@@ -80,9 +80,9 @@ function evaluatePlayerForMatchday(player: any, fixtures: any[]) {
     modifier *= 0.8;
   }
 
-  const starterChance = (player.penaltyTakerPercentage !== undefined && player.penaltyTakerPercentage !== null)
-    ? player.penaltyTakerPercentage
-    : 1.0;
+  // Starter probability (1.0 = starter, 0.5 = ballot, 0.0 = injured/suspended)
+  // Attualmente non disponiamo di dati infortuni/squalifiche nel DB, assumiamo 1.0
+  const starterChance = 1.0;
 
   let expectedMatchScore = (player.expectedValue || 6.0) + modifier;
 
