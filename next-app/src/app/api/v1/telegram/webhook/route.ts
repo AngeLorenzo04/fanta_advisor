@@ -219,9 +219,10 @@ async function handleBestTeam(chatId: number, text: string) {
 
         await sendMessage(chatId, msg);
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error fetching optimal lineup:", e);
-        await sendMessage(chatId, "Errore interno durante il calcolo\\.");
+        const errStr = e && e.message ? e.message : String(e);
+        await sendMessage(chatId, `Errore interno durante il calcolo: ${escapeMarkdown(errStr)}`);
     }
 }
 
