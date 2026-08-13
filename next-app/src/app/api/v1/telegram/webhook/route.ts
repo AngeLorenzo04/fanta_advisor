@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendMessage } from '../telegram-utils';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 function escapeMarkdown(text: string): string {
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, '\\$1');
@@ -41,10 +39,10 @@ export async function POST(request: Request) {
             }
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, debug: (global as any).lastWebhookError });
     } catch (e) {
         console.error("Webhook error:", e);
-        return NextResponse.json({ success: false }, { status: 500 });
+        return NextResponse.json({ success: false, error: String(e) }, { status: 500 });
     }
 }
 
@@ -310,8 +308,9 @@ async function handleMisterList(chatId: number) {
         });
         
         await sendMessage(chatId, msg);
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error fetching mister list:", e);
+        (global as any).lastWebhookError = e?.message || String(e);
         await sendMessage(chatId, "Il KGB ha intercettato un errore nel recupero della lista Compagni\\.");
     }
 }
