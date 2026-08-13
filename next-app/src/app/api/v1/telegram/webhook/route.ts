@@ -384,7 +384,7 @@ async function handleConsigli(chatId: number, text: string) {
         const allPlayers = await prisma.player.findMany();
         
         const initialBudget = participant.initialBudget || 500;
-        const spent = teamPurchases.reduce((sum, p) => sum + p.cost, 0);
+        const spent = teamPurchases.reduce((sum, p) => sum + p.price, 0);
         const budget = initialBudget - spent;
         
         const remainingOverallSlots = Math.max(0, 25 - teamPurchases.length);

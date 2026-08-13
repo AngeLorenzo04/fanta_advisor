@@ -1,4 +1,5 @@
-import puppeteer, { Browser, Page } from 'puppeteer-extra';
+import puppeteer from 'puppeteer-extra';
+import { Browser, Page } from 'puppeteer';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import * as dotenv from 'dotenv';
 

@@ -1,4 +1,4 @@
-import { Page } from 'puppeteer-extra';
+import { Page } from 'puppeteer';
 
 export interface ScrapedTeam {
   name: string;

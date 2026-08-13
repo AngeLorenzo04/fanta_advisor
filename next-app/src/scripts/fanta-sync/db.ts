@@ -47,7 +47,6 @@ export class DatabaseService {
                 data: {
                   playerId: dbPlayer.id,
                   participantId: participant.id,
-                  cost: p.cost,
                   price: p.cost
                 }
               });
