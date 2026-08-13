@@ -155,25 +155,31 @@ export async function POST() {
 
     // 1. Fetch live page from Fantacalcio.it with fast 3s timeout
     const playersToSave: any[] = [];
+    let debugError = "";
     try {
       const response = await fetch("https://www.fantacalcio.it/quotazioni-fantacalcio", {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(30000),
+        cache: "no-store",
       });
 
       if (response.ok) {
         const html = await response.text();
         const $ = cheerio.load(html);
 
+        let rowCount = 0;
+        let emptyNameCount = 0;
+
         $('tr.player-row, .player-item, tr[data-id]').each((_, row) => {
-          const nameEl = $(row).find('a.name').first();
-          const rawName = nameEl.length
-            ? nameEl.text()
-            : $(row).find('.player-name').clone().children().remove().end().text();
+          rowCount++;
+          const rawName = $(row).find('a.player-name span, a.player-name').first().text().trim() || $(row).find('.player-name').text().trim();
           const name = cleanPlayerName(rawName);
-          if (!name) return;
+          if (!name) {
+            emptyNameCount++;
+            return;
+          }
 
           const role = ($(row).attr('data-filter-role-classic') || $(row).find('.role').text().trim()).toUpperCase().charAt(0) || 'C';
           const teamAbbr = $(row).find('.player-team, .team').text().trim().toUpperCase();
@@ -195,9 +201,15 @@ export async function POST() {
           });
         });
         scrapedPlayersCount = playersToSave.length;
+        if (scrapedPlayersCount === 0) {
+          debugError = `HTML: ${html.length}, rows: ${rowCount}, emptyNames: ${emptyNameCount}`;
+        }
+      } else {
+        debugError = `Response not ok: ${response.status} ${response.statusText}`;
       }
-    } catch (e) {
-      console.log("Fantacalcio live fetch skipped/timed out, serving database records.");
+    } catch (e: any) {
+      debugError = e?.message || String(e);
+      console.log("FETCH ERROR:", e);
     }
 
     // 2. Fetch existing players from DB to prevent duplicates
@@ -292,6 +304,7 @@ export async function POST() {
       totalPlayers: existingPlayersMap.size,
       participantsCreated,
       fixturesCreated,
+      debugError
     });
   } catch (error: any) {
     console.error("Live Seed API Error:", error);
