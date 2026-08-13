@@ -181,6 +181,7 @@ async function handleBestTeam(chatId: number, text: string) {
             where: {
                 name: {
                     contains: nameQuery,
+                    mode: 'insensitive'
                 }
             }
         });
