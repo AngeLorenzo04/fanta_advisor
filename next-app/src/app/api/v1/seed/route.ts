@@ -7,7 +7,7 @@ const TEAM_STRENGTH: Record<string, number> = {
   "Roma": 4, "Lazio": 4, "Bologna": 3, "Fiorentina": 4, "Torino": 3,
   "Genoa": 3, "Monza": 3, "Lecce": 2, "Verona": 2, "Empoli": 2,
   "Udinese": 2, "Cagliari": 2, "Parma": 2, "Como": 2, "Venezia": 1,
-  "Pisa": 2, "Sassuolo": 3, "Cremonese": 2, "Spezia": 2
+  "Pisa": 2, "Sassuolo": 3, "Cremonese": 2, "Spezia": 2, "Frosinone": 2
 };
 
 function mapTeamAbbreviation(abbr: string): string {
@@ -122,16 +122,16 @@ const SEED_PARTICIPANTS = [
 ];
 
 const SEED_FIXTURES = [
+  { homeTeam: "Atalanta", awayTeam: "Sassuolo", homeTeamStrength: 5, awayTeamStrength: 3 },
+  { homeTeam: "Bologna", awayTeam: "Lazio", homeTeamStrength: 3, awayTeamStrength: 4 },
+  { homeTeam: "Frosinone", awayTeam: "Juventus", homeTeamStrength: 2, awayTeamStrength: 5 },
+  { homeTeam: "Genoa", awayTeam: "Napoli", homeTeamStrength: 3, awayTeamStrength: 5 },
   { homeTeam: "Inter", awayTeam: "Monza", homeTeamStrength: 5, awayTeamStrength: 3 },
-  { homeTeam: "Juventus", awayTeam: "Parma", homeTeamStrength: 5, awayTeamStrength: 2 },
-  { homeTeam: "Milan", awayTeam: "Venezia", homeTeamStrength: 5, awayTeamStrength: 1 },
-  { homeTeam: "Napoli", awayTeam: "Cagliari", homeTeamStrength: 5, awayTeamStrength: 2 },
-  { homeTeam: "Roma", awayTeam: "Udinese", homeTeamStrength: 4, awayTeamStrength: 2 },
-  { homeTeam: "Lazio", awayTeam: "Verona", homeTeamStrength: 4, awayTeamStrength: 2 },
-  { homeTeam: "Atalanta", awayTeam: "Fiorentina", homeTeamStrength: 5, awayTeamStrength: 4 },
-  { homeTeam: "Pisa", awayTeam: "Sassuolo", homeTeamStrength: 2, awayTeamStrength: 3 },
-  { homeTeam: "Bologna", awayTeam: "Genoa", homeTeamStrength: 3, awayTeamStrength: 3 },
-  { homeTeam: "Torino", awayTeam: "Empoli", homeTeamStrength: 3, awayTeamStrength: 2 },
+  { homeTeam: "Parma", awayTeam: "Cagliari", homeTeamStrength: 2, awayTeamStrength: 2 },
+  { homeTeam: "Roma", awayTeam: "Fiorentina", homeTeamStrength: 4, awayTeamStrength: 4 },
+  { homeTeam: "Torino", awayTeam: "Milan", homeTeamStrength: 3, awayTeamStrength: 5 },
+  { homeTeam: "Udinese", awayTeam: "Como", homeTeamStrength: 2, awayTeamStrength: 2 },
+  { homeTeam: "Venezia", awayTeam: "Lecce", homeTeamStrength: 1, awayTeamStrength: 2 },
 ];
 
 export async function OPTIONS() {
