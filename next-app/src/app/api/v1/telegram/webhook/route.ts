@@ -27,6 +27,8 @@ export async function POST(request: Request) {
             await handleRule(chatId);
         } else if (text.startsWith('/info')) {
             await handleInfo(chatId);
+        } else if (text.startsWith('/consigli')) {
+            await handleConsigli(chatId, text);
         } else if (text.startsWith('/id')) {
             await sendMessage(chatId, `Il Chat ID di questo gruppo/conversazione è: \`${chatId}\``);
         } else if (text.startsWith('/start')) {
@@ -319,6 +321,7 @@ async function handleRule(chatId: number) {
     let msg = `📜 *Direttive del Partito sui Comandi del Bot* 📜\n\n`;
     msg += `Il Comitato Centrale ha approvato i seguenti strumenti per il popolo:\n\n`;
     msg += `* /best\\_team \\[ID\\_Mister\\]* \\- Richiedi al Soviet Supremo la migliore formazione calcolata scientificamente per massimizzare la produzione del tuo collettivo\\.\n`;
+    msg += `* /consigli \\[Nome o ID Mister\\]* \\- Richiedi un dossier segreto con i migliori lavoratori liberi sul mercato calcolati in base alle esigenze e fondi del tuo reparto\\.\n`;
     msg += `* /exchange \\[ID1\\] \\[Gioc1\\] \\[ID2\\] \\[Gioc2\\]* \\- Invia una richiesta al Ministero del Commercio per valutare se uno scambio rispetta i principi di equità proletaria\\.\n`;
     msg += `* /mister* \\- Consulta gli archivi del KGB per ottenere l'ID di Partito di tutti i compagni fantallenatori\\.\n`;
     msg += `* /rule* \\- Consulta questo manifesto dei comandi di Partito\\.\n`;
@@ -337,4 +340,118 @@ async function handleInfo(chatId: number) {
     msg += `Gloria all'algoritmo\\!`;
     
     await sendMessage(chatId, msg);
+}
+
+function getSuggestedPrice(p: any): number {
+  if (p.expectedValue < 5.8) return 1;
+  let val = Math.pow(p.expectedValue - 5.5, 2.5) * 8;
+  if (p.role === "P") val *= 0.5;
+  if (p.role === "D") val *= 0.7;
+  if (p.role === "C") val *= 1.1;
+  if (p.role === "A") val *= 1.4;
+  return Math.max(1, Math.min(450, Math.round(val)));
+}
+
+async function handleConsigli(chatId: number, text: string) {
+    const parts = text.split(' ');
+    if (parts.length < 2) {
+        await sendMessage(chatId, "Uso corretto: /consigli \\[ID\\_Mister o Nome\\]");
+        return;
+    }
+
+    let participant;
+    const inputId = parseInt(parts[1]);
+    
+    if (isNaN(inputId)) {
+        const nameQuery = parts.slice(1).join(' ').toLowerCase();
+        participant = await prisma.auctionParticipant.findFirst({
+            where: { name: { contains: nameQuery, mode: 'insensitive' } }
+        });
+    } else {
+        participant = await prisma.auctionParticipant.findUnique({ where: { id: inputId } });
+    }
+
+    if (!participant) {
+        await sendMessage(chatId, `Compagno non trovato agli atti\\. Usa /mister per consultare l'archivio\\.`);
+        return;
+    }
+
+    try {
+        const purchases = await prisma.purchase.findMany({ include: { player: true } });
+        const teamPurchases = purchases.filter(p => p.participantId === participant.id);
+        const boughtIds = new Set(purchases.map(p => p.playerId));
+        
+        const allPlayers = await prisma.player.findMany();
+        
+        const initialBudget = participant.initialBudget || 500;
+        const spent = teamPurchases.reduce((sum, p) => sum + p.cost, 0);
+        const budget = initialBudget - spent;
+        
+        const remainingOverallSlots = Math.max(0, 25 - teamPurchases.length);
+        const maxBid = budget - (remainingOverallSlots - 1);
+        
+        if (remainingOverallSlots === 0) {
+            await sendMessage(chatId, `✅ Il compagno *${escapeMarkdown(participant.name)}* ha già riempito tutti i posti disponibili nella fabbrica\\. Nessun reclutamento necessario\\.`);
+            return;
+        }
+
+        const availablePlayers = allPlayers.filter(p => !boughtIds.has(p.id));
+        const roles = ["P", "D", "C", "A"];
+        const roleLimits: Record<string, number> = { P: 3, D: 8, C: 8, A: 6 };
+        
+        let msg = `🕵️‍♂️ *Dossier Scouting per ${escapeMarkdown(participant.name)}* 🕵️‍♂️\n\n`;
+        msg += `Fondi dello Stato: *${budget} cr*\n`;
+        msg += `Posti vacanti: *${remainingOverallSlots}*\n\n`;
+
+        let foundAny = false;
+
+        for (const role of roles) {
+            const rolePurchases = teamPurchases.filter(p => p.player.role === role);
+            const count = rolePurchases.length;
+            const missing = roleLimits[role] - count;
+            
+            if (missing <= 0) continue;
+            
+            const avgRoleEv = count > 0 ? rolePurchases.reduce((acc, p) => acc + (p.player.expectedValue || 6.0), 0) / count : 0;
+            
+            let candidates = availablePlayers.filter(p => p.role === role && getSuggestedPrice(p) <= maxBid);
+            
+            candidates.sort((a, b) => {
+              const evA = a.expectedValue || 6.0;
+              const evB = b.expectedValue || 6.0;
+              if (avgRoleEv < 6.4 || role === 'P') {
+                return evB - evA;
+              } else {
+                const valueA = evA / Math.max(1, getSuggestedPrice(a));
+                const valueB = evB / Math.max(1, getSuggestedPrice(b));
+                return valueB - valueA;
+              }
+            });
+            
+            const top3 = candidates.slice(0, 3);
+            if (top3.length === 0) continue;
+            
+            foundAny = true;
+            msg += `*Reparto ${role}* \\(mancano ${missing}\\):\n`;
+            
+            top3.forEach((p, idx) => {
+                const ev = (p.expectedValue || 6.0);
+                const price = getSuggestedPrice(p);
+                const strat = (avgRoleEv < 6.4 || ev >= 7.0) ? "Top" : "Low Cost";
+                msg += `  ${idx + 1}\\. ${escapeMarkdown(p.name)} \\(${escapeMarkdown(p.team)}\\)\n`;
+                msg += `      EV: ${escapeMarkdown(ev.toFixed(1))} \\| Max: ${price}cr \\| _${escapeMarkdown(strat)}_\n`;
+            });
+            msg += `\n`;
+        }
+        
+        if (!foundAny) {
+            msg += `Nessun lavoratore raccomandabile con i fondi attuali\\.`;
+        }
+
+        await sendMessage(chatId, msg);
+
+    } catch (e: any) {
+        console.error("Error in scouting:", e);
+        await sendMessage(chatId, "Errore durante la perlustrazione dei lavoratori svincolati\\.");
+    }
 }
