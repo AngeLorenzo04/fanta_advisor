@@ -222,7 +222,7 @@ export async function POST() {
 
     // 3. Fast Parallel Batch Upsert into DB
     const toCreate: any[] = [];
-    const updatePromises: any[] = [];
+    const toUpdate: { id: number, data: any }[] = [];
 
     for (const p of playersToSave) {
       const nameKey = `${p.name.toLowerCase().trim()}_${p.team.toLowerCase().trim()}`;
@@ -243,12 +243,7 @@ export async function POST() {
       };
 
       if (existingId) {
-        updatePromises.push(
-          prisma.player.update({
-            where: { id: existingId },
-            data: playerData,
-          })
-        );
+        toUpdate.push({ id: existingId, data: playerData });
         playersUpdated++;
       } else {
         toCreate.push(playerData);
@@ -258,8 +253,16 @@ export async function POST() {
 
     // Execute updates in parallel chunks of 50
     const chunkSize = 50;
-    for (let i = 0; i < updatePromises.length; i += chunkSize) {
-      await Promise.all(updatePromises.slice(i, i + chunkSize));
+    for (let i = 0; i < toUpdate.length; i += chunkSize) {
+      const chunk = toUpdate.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map((item) =>
+          prisma.player.update({
+            where: { id: item.id },
+            data: item.data,
+          })
+        )
+      );
     }
 
     // Execute bulk create for new players
