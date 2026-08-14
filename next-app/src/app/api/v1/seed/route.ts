@@ -110,16 +110,7 @@ function calculatePlayerStats(name: string, role: string, currentQuote: number, 
   };
 }
 
-const SEED_PARTICIPANTS = [
-  "FC Ranocchia",
-  "Real Sconcerti",
-  "AS Panchina",
-  "Bomber United",
-  "Deportivo Fantallenatore",
-  "Inter Nazionale",
-  "Catenaccio FC",
-  "Golazo Squad"
-];
+// L'array SEED_PARTICIPANTS è stato rimosso in quanto si usa lo scraping da Leghe Fantacalcio.
 
 const SEED_FIXTURES = [
   { homeTeam: "Atalanta", awayTeam: "Sassuolo", homeTeamStrength: 5, awayTeamStrength: 3 },
@@ -277,23 +268,8 @@ export async function POST() {
       });
     }
 
-    // 4. Ensure default Participants (Mister) exist
-    for (const pName of SEED_PARTICIPANTS) {
-      const existing = await prisma.auctionParticipant.findUnique({
-        where: { name: pName },
-      });
-
-      if (!existing) {
-        await prisma.auctionParticipant.create({
-          data: {
-            name: pName,
-            initialBudget: 500,
-            remainingBudget: 500,
-          },
-        });
-        participantsCreated++;
-      }
-    }
+    // Rimosso l'inserimento dei partecipanti mock (SEED_PARTICIPANTS)
+    // Le vere squadre verranno inserite tramite lo script sync-league.ts simulando l'accesso.
 
     // 5. Ensure Match Fixtures are updated to latest matchday schedule
     await prisma.matchFixture.deleteMany({});
