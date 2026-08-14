@@ -1,26 +1,26 @@
 import { sendMessage } from '../telegram-utils';
 
 export async function handleRule(chatId: number) {
-    let msg = `📜 *Direttive del Partito sui Comandi del Bot* 📜\n\n`;
-    msg += `Il Comitato Centrale ha approvato i seguenti strumenti per il popolo:\n\n`;
-    msg += `* /best\\_team \\[ID\\_Mister\\]* \\- Richiedi al Soviet Supremo la migliore formazione calcolata scientificamente per massimizzare la produzione del tuo collettivo\\.\n`;
-    msg += `* /consigli \\[Nome o ID Mister\\]* \\- Richiedi un dossier segreto con i migliori lavoratori liberi sul mercato calcolati in base alle esigenze e fondi del tuo reparto\\.\n`;
-    msg += `* /exchange \\[ID1\\] \\[Gioc1\\] \\[ID2\\] \\[Gioc2\\]* \\- Invia una richiesta al Ministero del Commercio per valutare se uno scambio rispetta i principi di equità proletaria\\.\n`;
-    msg += `* /mister* \\- Consulta gli archivi del KGB per ottenere l'ID di Partito di tutti i compagni fantallenatori\\.\n`;
-    msg += `* /rule* \\- Consulta questo manifesto dei comandi di Partito\\.\n`;
-    msg += `* /info* \\- Richiedi il dossier dettagliato sul funzionamento dell'algoritmo di Stato \\(API\\)\\.\n`;
+    let msg = `📜 *MANIFESTO UFFICIALE DEL PARTITO* 📜\n\n`;
+    msg += `Il Comitato Centrale ha approvato i seguenti strumenti per il proletariato fantacalcistico:\n\n`;
+    msg += `* /best\\_team \\[Tessera\\_Partito\\]* \\- Richiedi al Politburo la migliore formazione, calcolata scientificamente per massimizzare l'estrazione di plusvalore dai tuoi lavoratori\\.\n`;
+    msg += `* /consigli \\[Tessera o Nome\\]* \\- Usa lo spionaggio industriale per individuare i migliori stacanovisti ancora liberi sul mercato\\.\n`;
+    msg += `* /exchange \\[ID1\\] \\[Gioc1\\] \\[ID2\\] \\[Gioc2\\]* \\- Sottoponi un baratto al Tribunale del Popolo per assicurarti che non vi siano arricchimenti illeciti borghesi\\.\n`;
+    msg += `* /mister* \\- Consulta gli archivi segreti del KGB per ottenere la Tessera di Partito di tutti i compagni della Lega\\.\n`;
+    msg += `* /rule* \\- Affiggi questo manifesto in tutte le piazze\\.\n`;
+    msg += `* /info* \\- Leggi i segreti di Stato su come l'Algoritmo Centrale domina la nostra società\\.\n`;
     
     await sendMessage(chatId, msg);
 }
 
 export async function handleInfo(chatId: number) {
-    let msg = `⚙️ *Dossier Tecnico: L'Infrastruttura di Stato \\(API\\)* ⚙️\n\n`;
-    msg += `L'applicazione centrale \\(API\\) funziona come l'apparato burocratico perfetto, distribuendo le risorse secondo le necessità di ogni compagno, senza favoritismi borghesi\\.\n\n`;
-    msg += `*1\\. Raccolta Dati \\(Web Scraping\\)*\nI nostri ispettori statali prelevano quotidianamente i dati dalle fonti ufficiali, espropriando le statistiche dei lavoratori del pallone per inserirle nei nostri archivi centrali\\.\n\n`;
-    msg += `*2\\. Modello Matematico di Valutazione*\nIl calcolatore centrale di Mosca analizza le prestazioni\\. Nessun voto è lasciato al caso o all'interpretazione borghese\\. Si assegna un "Expected Base Rating" \\(Voto di Stato\\) e un "Expected Value" \\(Fanta\\-Valore\\), aggiungendo bonus per i lavoratori specializzati in calci piazzati e rigori\\.\n\n`;
-    msg += `*3\\. Pianificazione Formazione \\(Lineup\\)*\nIl sistema utilizza la programmazione lineare per schierare i compagni più produttivi\\. Non puoi scegliere la formazione: è lo Stato che sceglie la formazione migliore per te, rispettando i limiti strutturali \\(il modulo\\)\\.\n\n`;
-    msg += `*4\\. Gestione delle Transazioni*\nOgni acquisto o scambio è registrato nel registro centrale \\(Database Relazionale\\)\\. Qualsiasi tentativo di accumulare crediti in modo illecito viene bloccato dal KGB\\.\n\n`;
-    msg += `Gloria all'algoritmo\\!`;
+    let msg = `⚙️ *IL GRANDE CALCOLATORE DI STATO \\(L'API\\)* ⚙️\n\n`;
+    msg += `L'Infrastruttura Centrale funziona come l'apparato burocratico perfetto, distribuendo i voti secondo le necessità di ogni compagno, reprimendo ogni slancio di individualismo borghese\\.\n\n`;
+    msg += `*1\\. Requisizione Dati \\(Web Scraping\\)*\nI nostri funzionari di partito prelevano quotidianamente i dati dalle fonti ufficiali, espropriando le statistiche per inserirle nei nostri registri inossidabili\\.\n\n`;
+    msg += `*2\\. Pianificazione Quinquennale \\(Modello Matematico\\)*\nIl calcolatore di Mosca non lascia nulla al caso\\. Assegna una "Quota Produttiva Statale" \\(Expected Value\\) a ogni lavoratore, premiando i compagni specializzati nei lavori pesanti \\(calci piazzati e rigori\\)\\.\n\n`;
+    msg += `*3\\. Collettivizzazione della Formazione \\(Lineup\\)*\nLa formazione non si sceglie, si subisce per il bene dello Stato\\! Il sistema usa la programmazione lineare per ottimizzare la catena di montaggio e massimizzare i voti\\. Il dissenso non è tollerato\\.\n\n`;
+    msg += `*4\\. Tribunale delle Transazioni*\nOgni compravendita è registrata dal regime\\. Il tentativo di fare cresta sui crediti verrà punito con un biglietto di sola andata per la Siberia\\.\n\n`;
+    msg += `Gloria al Partito\\! Lunga vita all'Algoritmo\\! ☭`;
     
     await sendMessage(chatId, msg);
 }

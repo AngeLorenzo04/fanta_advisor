@@ -45,7 +45,7 @@ export async function handleConsigli(chatId: number, text: string) {
         const maxBid = budget - (remainingOverallSlots - 1);
         
         if (remainingOverallSlots === 0) {
-            await sendMessage(chatId, `✅ Il compagno *${escapeMarkdown(participant.name)}* ha già riempito tutti i posti disponibili nella fabbrica\\. Nessun reclutamento necessario\\.`);
+            await sendMessage(chatId, `✅ Il compagno *${escapeMarkdown(participant.name)}* ha già saturato la capacità della sua fabbrica\\. Nessun lavoratore aggiuntivo necessario\\.`);
             return;
         }
 
@@ -53,9 +53,9 @@ export async function handleConsigli(chatId: number, text: string) {
         const roles = ["P", "D", "C", "A"];
         const roleLimits: Record<string, number> = { P: 3, D: 8, C: 8, A: 6 };
         
-        let msg = `🕵️‍♂️ *Dossier Scouting per ${escapeMarkdown(participant.name)}* 🕵️‍♂️\n\n`;
-        msg += `Fondi dello Stato: *${budget} cr*\n`;
-        msg += `Posti vacanti: *${remainingOverallSlots}*\n\n`;
+        let msg = `🕵️‍♂️ *SPIONAGGIO INDUSTRIALE PER IL COMPAGNO ${escapeMarkdown(participant.name)}* 🕵️‍♂️\n\n`;
+        msg += `💰 Fondi Statali: *${budget} rubli*\n`;
+        msg += `🪑 Posti di lavoro nei Gulag: *${remainingOverallSlots}*\n\n`;
 
         let foundAny = false;
 
@@ -86,20 +86,20 @@ export async function handleConsigli(chatId: number, text: string) {
             if (top3.length === 0) continue;
             
             foundAny = true;
-            msg += `*Reparto ${role}* \\(mancano ${missing}\\):\n`;
+            msg += `*Reparto ${role}* \\(Mancano ${missing} stacanovisti\\):\n`;
             
             top3.forEach((p, idx) => {
                 const ev = (p.expectedValue || 6.0);
                 const price = getSuggestedPrice(p);
-                const strat = (avgRoleEv < 6.4 || ev >= 7.0) ? "Top" : "Low Cost";
+                const strat = (avgRoleEv < 6.4 || ev >= 7.0) ? "Compagno Eroe" : "Lavoratore Economico";
                 msg += `  ${idx + 1}\\. ${escapeMarkdown(p.name)} \\(${escapeMarkdown(p.team)}\\)\n`;
-                msg += `      EV: ${escapeMarkdown(ev.toFixed(1))} \\| Max: ${price}cr \\| _${escapeMarkdown(strat)}_\n`;
+                msg += `      Produttività: ${escapeMarkdown(ev.toFixed(1))} \\| Costo Massimo: ${price} rubli \\| _${escapeMarkdown(strat)}_\n`;
             });
             msg += `\n`;
         }
         
         if (!foundAny) {
-            msg += `Nessun lavoratore raccomandabile con i fondi attuali\\.`;
+            msg += `Nessun lavoratore raccomandabile con i rubli attuali dello Stato\\. La nazione langue\\.`;
         }
 
         await sendMessage(chatId, msg);

@@ -50,26 +50,27 @@ export async function handleExchange(chatId: number, text: string) {
         const val2 = g2.currentQuote || g2.initialQuote || 1;
         const diff = val2 - val1;
 
-        let msg = `⚖️ *Valutazione Ministeriale dell'Esproprio* ⚖️\n\n`;
-        msg += `*${escapeMarkdown(p1.name)}* dona allo stato: ${g1.role} ${escapeMarkdown(g1.name)} \\(Valore Produttivo: ${val1}\\)\n`;
-        msg += `*${escapeMarkdown(p2.name)}* dona allo stato: ${g2.role} ${escapeMarkdown(g2.name)} \\(Valore Produttivo: ${val2}\\)\n\n`;
+        let msg = `⚖️ *TRIBUNALE DEL POPOLO PER GLI SCAMBI* ⚖️\n\n`;
+        msg += `Il KGB ha esaminato la proposta di baratto tra i compagni.\n`;
+        msg += `*${escapeMarkdown(p1.name)}* cede al Soviet: ${g1.role} ${escapeMarkdown(g1.name)} \\(Quota Statale: ${val1} rubli\\)\n`;
+        msg += `*${escapeMarkdown(p2.name)}* cede al Soviet: ${g2.role} ${escapeMarkdown(g2.name)} \\(Quota Statale: ${val2} rubli\\)\n\n`;
 
         if (g1.role !== g2.role) {
-            msg += `⚠️ *Attenzione:* Le classi lavoratrici differiscono \\(${g1.role} vs ${g2.role}\\)\\. L'esproprio potrebbe violare il Piano Quinquennale\\!\n\n`;
+            msg += `⚠️ *ALLARME DEL MINISTERO:* Le classi lavoratrici differiscono \\(${g1.role} vs ${g2.role}\\)\\. Mischiare contadini e operai metallurgici potrebbe destabilizzare il Piano Quinquennale\\!\n\n`;
         }
 
         if (diff > 0) {
-            msg += `📈 L'esproprio arricchisce ingiustamente il compagno *${escapeMarkdown(p1.name)}* \\(\\+${diff} in quota produttiva\\)\\.`;
+            msg += `🚨 *ATTENZIONE SABOTAGGIO!* L'esproprio arricchisce ingiustamente il capitalista *${escapeMarkdown(p1.name)}* \\(\\+${diff} rubli di profitto illecito\\)\\. Al Gulag\\!`;
         } else if (diff < 0) {
-            msg += `📈 L'esproprio arricchisce ingiustamente il compagno *${escapeMarkdown(p2.name)}* \\(\\+${Math.abs(diff)} in quota produttiva\\)\\.`;
+            msg += `🚨 *ATTENZIONE SABOTAGGIO!* L'esproprio arricchisce ingiustamente il capitalista *${escapeMarkdown(p2.name)}* \\(\\+${Math.abs(diff)} rubli di profitto illecito\\)\\. Al Gulag\\!`;
         } else {
-            msg += `🤝 L'esproprio è *perfettamente comunista* ed equo per il Partito\\!`;
+            msg += `🤝 *APPROVATO DAL POLITBURO:* Lo scambio è perfettamente equo e comunista\\! Gloria a Lenin\\!`;
         }
 
         await sendMessage(chatId, msg);
 
     } catch (e) {
         console.error("Error handling exchange:", e);
-        await sendMessage(chatId, "Errore burocratico durante l'esproprio di Stato\\.");
+        await sendMessage(chatId, "❌ La macchina da scrivere del ministero si è inceppata. Riprova più tardi.");
     }
 }

@@ -13,15 +13,15 @@ export async function handleMisterList(chatId: number) {
             return;
         }
 
-        let msg = `👤 *Lista dei Compagni Mister registrati al PCUS* 👤\n\n`;
+        let msg = `👤 *MEMBRI DEL SOVIET SUPREMO DELLA LEGA* 👤\n\n`;
         participants.forEach(p => {
-            msg += `ID di Partito: *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
+            msg += `Tessera del Partito N. *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
         });
         
         await sendMessage(chatId, msg);
     } catch (e: any) {
         console.error("Error fetching mister list:", e);
         (global as any).lastWebhookError = e?.message || String(e);
-        await sendMessage(chatId, "Il KGB ha intercettato un errore nel recupero della lista Compagni\\.");
+        await sendMessage(chatId, "❌ Il KGB ha intercettato un errore nel recupero dei dossier dei compagni\\.");
     }
 }

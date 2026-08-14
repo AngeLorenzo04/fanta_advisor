@@ -46,18 +46,18 @@ export async function handleBestTeam(chatId: number, text: string) {
             return;
         }
 
-        let msg = `☭ *Il Comitato Centrale ha decretato il seguente schieramento per il compagno ${escapeMarkdown(participant.name)}* ☭\n\n`;
-        msg += `📐 Assetto di Classe: *${escapeMarkdown(data.formation)}*\n`;
-        msg += `🏭 Quota di Produzione Attesa: *${escapeMarkdown(data.totalProjectedScore.toFixed(2))}*\n\n`;
+        let msg = `☭ *IL SOVIET SUPREMO HA DECISO PER IL COMPAGNO ${escapeMarkdown(participant.name)}* ☭\n\n`;
+        msg += `🏭 Modello Organizzativo del Collettivo: *${escapeMarkdown(data.formation)}*\n`;
+        msg += `📈 Quota di Produzione Stacanovista Stimata: *${escapeMarkdown(data.totalProjectedScore.toFixed(2))}*\n\n`;
         
-        msg += `*Compagni al Fronte:*\n`;
+        msg += `*🎖 Lavoratori al Fronte (Titolari):*\n`;
         data.starting11.forEach((p: any) => {
-            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
+            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(Produttività: ${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
         });
 
-        msg += `\n*Riserve (Pronti all'Esproprio):*\n`;
+        msg += `\n*⛏ Nelle Miniere di Carbone (Riserve pronte al sacrificio):*\n`;
         data.bench.forEach((p: any) => {
-            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
+            msg += `\\- ${p.player.role} ${escapeMarkdown(p.player.name)} \\(Produttività: ${escapeMarkdown(p.expectedMatchScore.toFixed(2))}\\)\n`;
         });
 
         await sendMessage(chatId, msg);
@@ -65,6 +65,6 @@ export async function handleBestTeam(chatId: number, text: string) {
     } catch (e: any) {
         console.error("Error fetching optimal lineup:", e);
         const errStr = e && e.message ? e.message : String(e);
-        await sendMessage(chatId, `Errore burocratico interno: ${escapeMarkdown(errStr)}`);
+        await sendMessage(chatId, `❌ I sabotatori capitalisti hanno corrotto i nostri archivi: ${escapeMarkdown(errStr)}`);
     }
 }
