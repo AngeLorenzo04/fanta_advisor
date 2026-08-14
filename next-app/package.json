@@ -8,6 +8,7 @@
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:bot\"",
     "build": "prisma generate && next build",
     "start": "next start",
+    "start:prod": "concurrently \"npm run start\" \"npm run dev:bot\"",
     "lint": "eslint",
     "sync-league": "npx tsx src/scripts/sync-league.ts"
   },
