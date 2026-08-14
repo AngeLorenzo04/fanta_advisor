@@ -25,6 +25,9 @@ async function run() {
     const scraper = new ScraperService(page, FANTA_LEAGUE);
 
     // 2. Scrape Listone (Giocatori)
+    // DISABILITATO: Il Listone ora si scarica perfettamente e molto più velocemente 
+    // dal bottone 'Seed DB' sul sito (che non richiede login).
+    /*
     try {
       const scrapedPlayers = await scraper.scrapeListone();
       if (scrapedPlayers.length > 0) {
@@ -33,6 +36,7 @@ async function run() {
     } catch (e: any) {
       console.error("❌ Errore durante lo scraping del Listone:", e.message);
     }
+    */
 
     // 3. Scrape Rose (Squadre e acquisti)
     try {
