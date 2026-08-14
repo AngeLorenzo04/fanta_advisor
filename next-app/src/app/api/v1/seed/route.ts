@@ -251,8 +251,10 @@ export async function POST() {
       }
     }
 
-    // Execute updates in parallel chunks of 50
-    const chunkSize = 50;
+    // Execute updates in parallel chunks of 10 to avoid memory/connection spikes
+    const chunkSize = 10;
+    console.log(`Inizio aggiornamento di ${toUpdate.length} giocatori in blocchi da ${chunkSize}...`);
+    
     for (let i = 0; i < toUpdate.length; i += chunkSize) {
       const chunk = toUpdate.slice(i, i + chunkSize);
       await Promise.all(
@@ -263,7 +265,9 @@ export async function POST() {
           })
         )
       );
+      console.log(`Aggiornati giocatori da ${i} a ${i + chunk.length}`);
     }
+    console.log(`Tutti gli aggiornamenti completati con successo.`);
 
     // Execute bulk create for new players
     if (toCreate.length > 0) {
