@@ -1,9 +1,15 @@
 import { Page } from 'puppeteer';
 
+export interface ScrapedPurchase {
+  name: string;
+  cost: number;
+}
+
 export interface ScrapedTeam {
   name: string;
+  mister?: string;
   initialBudget: number;
-  players: { name: string; cost: number }[];
+  players: ScrapedPurchase[];
 }
 
 export interface ScrapedPlayer {
@@ -19,76 +25,34 @@ export class ScraperService {
   constructor(private page: Page, private leagueName: string) {}
 
   async scrapeRose(): Promise<ScrapedTeam[]> {
-    const roseUrl = `https://leghe.fantacalcio.it/${this.leagueName}/rose`;
+    const roseUrl = `https://leghe.fantacalcio.it/${this.leagueName}/view/rosters`;
     console.log(`📄 Navigazione verso le rose: ${roseUrl}`);
     
     await this.page.goto(roseUrl, { waitUntil: "networkidle2" });
     console.log("📡 Scansione delle tabelle delle Rose nel DOM...");
     
     const scrapedTeams = await this.page.evaluate(() => {
-      const teams: ScrapedTeam[] = [];
-      const tables = Array.from(document.querySelectorAll('table'));
+      const teams: { name: string; mister: string; initialBudget: number; players: any[] }[] = [];
       
-      tables.forEach(table => {
-         let teamName = "Sconosciuta";
-         const prev = table.previousElementSibling;
-         if (prev && prev.textContent) teamName = prev.textContent.trim();
-         else {
-           const header = table.parentElement?.querySelector('h1, h2, h3, h4, .title, .team-name');
-           if (header && header.textContent) teamName = header.textContent.trim();
-         }
-         
-         const players: { name: string; cost: number }[] = [];
-         const rows = table.querySelectorAll('tbody tr');
-         rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 2) {
-               let name = "";
-               let cost = 1;
-               cells.forEach(cell => {
-                  const link = cell.querySelector('a');
-                  if (link && link.textContent) name = link.textContent.trim().toUpperCase();
-                  else if (!name && cell.textContent && !cell.textContent.includes('€') && isNaN(Number(cell.textContent))) {
-                      name = cell.textContent.trim().toUpperCase();
-                  }
-               });
-               
-               if (cells.length >= 5) {
-                  const costCell = cells[cells.length - 2];
-                  if (costCell && costCell.textContent) {
-                     const parsed = parseInt(costCell.textContent.replace(/[^0-9]/g, ''));
-                     if (!isNaN(parsed)) cost = parsed;
-                  }
-               }
-  
-               if (name && !name.includes('CALCIATORE NON')) {
-                  players.push({ name, cost });
-               }
-            }
-         });
-         
-         let initialBudget = 500;
-         const parentCard = table.closest('.card') || table.parentElement?.parentElement;
-         if (parentCard) {
-            const budgetEl = parentCard.querySelector('.text-xl.font-bold, .value, [class*="crediti"]');
-            if (budgetEl && budgetEl.textContent) {
-               const parsed = parseInt(budgetEl.textContent.replace(/[^0-9]/g, ''));
-               if (!isNaN(parsed)) initialBudget = parsed;
-            } else {
-               const allText = parentCard.textContent || "";
-               const match = allText.match(/CREDITI RESIDUI\s*(\d+)/i);
-               if (match) initialBudget = parseInt(match[1]);
-            }
-         }
-  
-         if (teamName !== "Sconosciuta") {
-            // Clean multiline team names
-            if (teamName.includes('\n')) {
-              teamName = teamName.split('\n')[0].trim();
-            }
-            teams.push({ name: teamName, players, initialBudget });
-         }
-      });
+      const teamItems = Array.from(document.querySelectorAll('ul.team-list li'));
+      
+      for (const item of teamItems) {
+        const titleEl = item.querySelector('.ant-card-meta-title');
+        const misterEl = item.querySelector('.ant-card-meta-description');
+        
+        if (titleEl && titleEl.textContent) {
+           const teamName = titleEl.textContent.trim();
+           const misterName = misterEl ? misterEl.textContent.trim() : "Mister Sconosciuto";
+           
+           teams.push({
+             name: teamName,
+             mister: misterName,
+             initialBudget: 500,
+             players: []
+           });
+        }
+      }
+      
       return teams;
     });
 
