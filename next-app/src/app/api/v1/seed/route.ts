@@ -112,18 +112,38 @@ function calculatePlayerStats(name: string, role: string, currentQuote: number, 
 
 // L'array SEED_PARTICIPANTS è stato rimosso in quanto si usa lo scraping da Leghe Fantacalcio.
 
-const SEED_FIXTURES = [
-  { homeTeam: "Atalanta", awayTeam: "Sassuolo", homeTeamStrength: 5, awayTeamStrength: 3 },
-  { homeTeam: "Bologna", awayTeam: "Lazio", homeTeamStrength: 3, awayTeamStrength: 4 },
-  { homeTeam: "Frosinone", awayTeam: "Juventus", homeTeamStrength: 2, awayTeamStrength: 5 },
-  { homeTeam: "Genoa", awayTeam: "Napoli", homeTeamStrength: 3, awayTeamStrength: 5 },
-  { homeTeam: "Inter", awayTeam: "Monza", homeTeamStrength: 5, awayTeamStrength: 3 },
-  { homeTeam: "Parma", awayTeam: "Cagliari", homeTeamStrength: 2, awayTeamStrength: 2 },
-  { homeTeam: "Roma", awayTeam: "Fiorentina", homeTeamStrength: 4, awayTeamStrength: 4 },
-  { homeTeam: "Torino", awayTeam: "Milan", homeTeamStrength: 3, awayTeamStrength: 5 },
-  { homeTeam: "Udinese", awayTeam: "Como", homeTeamStrength: 2, awayTeamStrength: 2 },
-  { homeTeam: "Venezia", awayTeam: "Lecce", homeTeamStrength: 1, awayTeamStrength: 2 },
-];
+async function fetchDynamicFixtures() {
+  try {
+    const response = await fetch("https://www.fantacalcio.it/probabili-formazioni-serie-a", {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    const teamAbbrs = $('.team-name').slice(0, 20).map((i, el) => $(el).text().trim().toUpperCase()).get();
+    const matches = [];
+    
+    for(let i=0; i < teamAbbrs.length; i += 2) {
+      if (teamAbbrs[i] && teamAbbrs[i+1]) {
+        const homeTeam = mapTeamAbbreviation(teamAbbrs[i]);
+        const awayTeam = mapTeamAbbreviation(teamAbbrs[i+1]);
+        matches.push({
+          homeTeam,
+          awayTeam,
+          homeTeamStrength: TEAM_STRENGTH[homeTeam] || 3,
+          awayTeamStrength: TEAM_STRENGTH[awayTeam] || 3
+        });
+      }
+    }
+    return matches;
+  } catch (error) {
+    console.error("Errore nello scraping delle partite:", error);
+    return [];
+  }
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -272,11 +292,15 @@ export async function POST() {
     // Le vere squadre verranno inserite tramite lo script sync-league.ts simulando l'accesso.
 
     // 5. Ensure Match Fixtures are updated to latest matchday schedule
+    const dynamicFixtures = await fetchDynamicFixtures();
     await prisma.matchFixture.deleteMany({});
-    await prisma.matchFixture.createMany({
-      data: SEED_FIXTURES,
-    });
-    fixturesCreated = SEED_FIXTURES.length;
+    
+    if (dynamicFixtures.length > 0) {
+      await prisma.matchFixture.createMany({
+        data: dynamicFixtures,
+      });
+      fixturesCreated = dynamicFixtures.length;
+    }
 
     return NextResponse.json({
       success: true,

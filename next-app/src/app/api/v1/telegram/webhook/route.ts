@@ -40,11 +40,8 @@ export async function POST(request: Request) {
         } else if (text.startsWith('/start')) {
             await sendMessage(chatId, "Benvenuto sotto la guida del Breznev Bot\\! I tuoi giocatori appartengono al popolo e le loro statistiche sono di proprietà dello Stato\\. Usa /best\\_team, /exchange, /mister, /rule o /info per consultare il Piano Quinquennale\\.");
         } else if (text.startsWith('/')) {
-            const rawCmd = text.split(' ')[0].replace('/', '').replace(/@.*$/, '').toLowerCase();
-            const customCmd = await (prisma as any).customCommand.findUnique({ where: { name: rawCmd } });
-            if (customCmd) {
-                await sendMessage(chatId, escapeMarkdown(customCmd.response));
-            }
+            // Comando non riconosciuto
+            await sendMessage(chatId, "Comando non riconosciuto dal Politburo. Usa /start per la lista dei comandi approvati.");
         }
 
         return NextResponse.json({ success: true, debug: (global as any).lastWebhookError });
