@@ -51,7 +51,7 @@ export async function handleExchange(chatId: number, text: string) {
         const diff = val2 - val1;
 
         let msg = `⚖️ *TRIBUNALE DEL POPOLO PER GLI SCAMBI* ⚖️\n\n`;
-        msg += `Il KGB ha esaminato la proposta di baratto tra i compagni.\n`;
+        msg += `Il KGB ha esaminato la proposta di baratto tra i compagni\\.\n`;
         msg += `*${escapeMarkdown(p1.name)}* cede al Soviet: ${g1.role} ${escapeMarkdown(g1.name)} \\(Quota Statale: ${val1} rubli\\)\n`;
         msg += `*${escapeMarkdown(p2.name)}* cede al Soviet: ${g2.role} ${escapeMarkdown(g2.name)} \\(Quota Statale: ${val2} rubli\\)\n\n`;
 
@@ -71,6 +71,6 @@ export async function handleExchange(chatId: number, text: string) {
 
     } catch (e) {
         console.error("Error handling exchange:", e);
-        await sendMessage(chatId, "❌ La macchina da scrivere del ministero si è inceppata. Riprova più tardi.");
+        await sendMessage(chatId, "❌ La macchina da scrivere del ministero si è inceppata\\. Riprova più tardi\\.");
     }
 }

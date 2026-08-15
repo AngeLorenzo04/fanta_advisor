@@ -15,7 +15,7 @@ export async function handleMisterList(chatId: number) {
 
         let msg = `👤 *MEMBRI DEL SOVIET SUPREMO DELLA LEGA* 👤\n\n`;
         participants.forEach(p => {
-            msg += `Tessera del Partito N. *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
+            msg += `Tessera del Partito N\\. *${p.id}* \\- ${escapeMarkdown(p.name)}\n`;
         });
         
         await sendMessage(chatId, msg);

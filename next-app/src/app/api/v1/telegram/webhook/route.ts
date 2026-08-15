@@ -41,7 +41,7 @@ export async function POST(request: Request) {
             await sendMessage(chatId, "Benvenuto sotto la guida del Breznev Bot\\! I tuoi giocatori appartengono al popolo e le loro statistiche sono di proprietà dello Stato\\. Usa /best\\_team, /exchange, /mister, /rule o /info per consultare il Piano Quinquennale\\.");
         } else if (text.startsWith('/')) {
             // Comando non riconosciuto
-            await sendMessage(chatId, "Comando non riconosciuto dal Politburo. Usa /start per la lista dei comandi approvati.");
+            await sendMessage(chatId, "Comando non riconosciuto dal Politburo\\. Usa /start per la lista dei comandi approvati\\.");
         }
 
         return NextResponse.json({ success: true, debug: (global as any).lastWebhookError });
